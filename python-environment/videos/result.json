@@ -1,0 +1,362 @@
+[
+    {
+        "blur extent": 0.9564295807819124,
+        "input_path": "videos/keyframes/48.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9931478405315615,
+        "input_path": "videos/keyframes/49.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9552924117931367,
+        "input_path": "videos/keyframes/59.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9951403887688985,
+        "input_path": "videos/keyframes/58.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9886940470696816,
+        "input_path": "videos/keyframes/8.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.8936365303502659,
+        "input_path": "videos/keyframes/9.jpg",
+        "is blur": true,
+        "per": 0.00018304960644334616
+    },
+    {
+        "blur extent": 0.9290638203246608,
+        "input_path": "videos/keyframes/14.jpg",
+        "is blur": true,
+        "per": 0.00022197558268590456
+    },
+    {
+        "blur extent": 0.9936034115138592,
+        "input_path": "videos/keyframes/28.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9874182184197282,
+        "input_path": "videos/keyframes/29.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9627151051625239,
+        "input_path": "videos/keyframes/15.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9941676792223573,
+        "input_path": "videos/keyframes/17.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9851620460757516,
+        "input_path": "videos/keyframes/16.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9844392248972401,
+        "input_path": "videos/keyframes/12.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9511278195488722,
+        "input_path": "videos/keyframes/13.jpg",
+        "is blur": true,
+        "per": 0.0005006257822277847
+    },
+    {
+        "blur extent": 0.9919610746773853,
+        "input_path": "videos/keyframes/39.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9787525702535984,
+        "input_path": "videos/keyframes/11.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9635252365930599,
+        "input_path": "videos/keyframes/10.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9534524218481621,
+        "input_path": "videos/keyframes/38.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9897629310344828,
+        "input_path": "videos/keyframes/21.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9855289421157685,
+        "input_path": "videos/keyframes/35.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9976324356318438,
+        "input_path": "videos/keyframes/34.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9905372405372406,
+        "input_path": "videos/keyframes/20.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9514665541253429,
+        "input_path": "videos/keyframes/36.jpg",
+        "is blur": true,
+        "per": 0.00021039343572480537
+    },
+    {
+        "blur extent": 0.9537430167597766,
+        "input_path": "videos/keyframes/22.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.8853906699942408,
+        "input_path": "videos/keyframes/23.jpg",
+        "is blur": true,
+        "per": 0.00019124115509657678
+    },
+    {
+        "blur extent": 0.963668430335097,
+        "input_path": "videos/keyframes/37.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 1.0,
+        "input_path": "videos/keyframes/33.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9950215731828742,
+        "input_path": "videos/keyframes/27.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9943835250066863,
+        "input_path": "videos/keyframes/26.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9987875113670809,
+        "input_path": "videos/keyframes/32.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9930761622156281,
+        "input_path": "videos/keyframes/18.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.8303008466942893,
+        "input_path": "videos/keyframes/24.jpg",
+        "is blur": true,
+        "per": 0.00035925992455541585
+    },
+    {
+        "blur extent": 0.995338512763596,
+        "input_path": "videos/keyframes/30.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9980601357904947,
+        "input_path": "videos/keyframes/31.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9501396090945353,
+        "input_path": "videos/keyframes/25.jpg",
+        "is blur": true,
+        "per": 0.0001990049751243781
+    },
+    {
+        "blur extent": 0.9957530218882719,
+        "input_path": "videos/keyframes/19.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9816566351390084,
+        "input_path": "videos/keyframes/42.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9868667917448405,
+        "input_path": "videos/keyframes/4.jpg",
+        "is blur": true,
+        "per": 0.0002678810608090008
+    },
+    {
+        "blur extent": 0.9994110718492344,
+        "input_path": "videos/keyframes/56.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9925975773889637,
+        "input_path": "videos/keyframes/5.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9979314420803782,
+        "input_path": "videos/keyframes/57.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9882041405873857,
+        "input_path": "videos/keyframes/43.jpg",
+        "is blur": true,
+        "per": 0.0007211538461538462
+    },
+    {
+        "blur extent": 0.9972741433021807,
+        "input_path": "videos/keyframes/55.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9939550949913645,
+        "input_path": "videos/keyframes/7.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9956521739130435,
+        "input_path": "videos/keyframes/41.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9831100757134537,
+        "input_path": "videos/keyframes/40.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9976190476190476,
+        "input_path": "videos/keyframes/54.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9904306220095693,
+        "input_path": "videos/keyframes/6.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9797630799605134,
+        "input_path": "videos/keyframes/2.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9673704414587332,
+        "input_path": "videos/keyframes/50.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9623518824058797,
+        "input_path": "videos/keyframes/44.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9869451697127938,
+        "input_path": "videos/keyframes/45.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9733188129594337,
+        "input_path": "videos/keyframes/3.jpg",
+        "is blur": true,
+        "per": 0.00027218290691344586
+    },
+    {
+        "blur extent": 0.9967204154140475,
+        "input_path": "videos/keyframes/51.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9843411226210552,
+        "input_path": "videos/keyframes/47.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9976798143851509,
+        "input_path": "videos/keyframes/53.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.935401614959626,
+        "input_path": "videos/keyframes/1.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9977734483718341,
+        "input_path": "videos/keyframes/52.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9777992277992278,
+        "input_path": "videos/keyframes/0.jpg",
+        "is blur": true,
+        "per": 0.0
+    },
+    {
+        "blur extent": 0.9922351636161952,
+        "input_path": "videos/keyframes/46.jpg",
+        "is blur": true,
+        "per": 0.0
+    }
+]
