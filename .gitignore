@@ -46,6 +46,8 @@ Thumbs.db
 .env.example
 .env.local
 .env.staging
+**/.ipynb_checkpoints/
+**/.python-version
 
 # ML models #
 #############
