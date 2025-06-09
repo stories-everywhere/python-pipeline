@@ -1,156 +1,339 @@
-import math
+import asyncio
+import io
+import os
 import random
-import time
+import tempfile
+import uuid
 from datetime import datetime
-from PIL import Image
+from typing import List, Dict, Any
+import base64
+
 import numpy as np
 import cv2
-import torch
-import os
-import pywt
+from PIL import Image
 import soundfile as sf
+from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi.responses import JSONResponse
+import uvicorn
+from pydantic import BaseModel
 
-import moondream as moonmd
-from openai import OpenAI
-from kokoro import KPipeline
-from vfp import Processor
+# Import your ML libraries (these will need to be hosted remotely)
+# import moondream as moonmd
+# from kokoro import KPipeline
 
-moonModel = moonmd.vl(model="moondream-2b-int8.mf")
-pipeline = KPipeline(lang_code='a')  # American English
+app = FastAPI(title="Langate Story Generator API")
 
+# Global variables for API clients
+openai_client = None
+hf_headers = None
+elevenlabs_headers = None
 
-def save_frames(processor, frame, frame_no, pos_msec):
-    ts = datetime.utcfromtimestamp(pos_msec / 1000.0).time().strftime("%H%M%S.%f")
-    cv2.imwrite(os.path.join(processor.params.output_dir, f"{ts}.jpg"), frame)
+class StoryRequest(BaseModel):
+    weather: str = "foggy"
+    length: int = 200
+    voice: str = "af_heart"
 
+class StoryResponse(BaseModel):
+    audio_files: List[str]  # Base64 encoded audio files
+    text: str
+    event: str
+    processing_time: str
 
-def blur_detect(img, threshold):
-    Y = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    M, N = Y.shape
-    Y = Y[0:int(M / 16) * 16, 0:int(N / 16) * 16]
+# API clients - no need for global model loading
+openai_client = None
+hf_headers = None
+elevenlabs_headers = None
 
-    LL1, (LH1, HL1, HH1) = pywt.dwt2(Y, 'haar')
-    LL2, (LH2, HL2, HH2) = pywt.dwt2(LL1, 'haar')
-    LL3, (LH3, HL3, HH3) = pywt.dwt2(LL2, 'haar')
+# Startup event to initialize API clients
+@app.on_event("startup")
+async def initialize_apis():
+    global openai_client, hf_headers, elevenlabs_headers
+    try:
+        # Initialize OpenAI client
+        import openai
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        if not openai_api_key:
+            raise ValueError("OPENAI_API_KEY environment variable not set")
+        openai_client = openai.OpenAI(api_key=openai_api_key)
+        
+        # Initialize Hugging Face headers
+        hf_api_key = os.getenv("HUGGINGFACE_API_KEY")
+        if not hf_api_key:
+            raise ValueError("HUGGINGFACE_API_KEY environment variable not set")
+        hf_headers = {"Authorization": f"Bearer {hf_api_key}"}
+        
+        # Initialize ElevenLabs headers
+        elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
+        if not elevenlabs_api_key:
+            raise ValueError("ELEVENLABS_API_KEY environment variable not set")
+        elevenlabs_headers = {
+            "Accept": "audio/mpeg",
+            "Content-Type": "application/json",
+            "xi-api-key": elevenlabs_api_key
+        }
+        
+        print("API clients initialized successfully")
+        print(f"OpenAI client ready: {openai_client is not None}")
+        print(f"Hugging Face headers ready: {hf_headers is not None}")
+        print(f"ElevenLabs headers ready: {elevenlabs_headers is not None}")
+        
+    except Exception as e:
+        print(f"Error initializing API clients: {e}")
+        raise e
 
-    E1 = np.sqrt(np.power(LH1, 2) + np.power(HL1, 2) + np.power(HH1, 2))
-    E2 = np.sqrt(np.power(LH2, 2) + np.power(HL2, 2) + np.power(HH2, 2))
-    E3 = np.sqrt(np.power(LH3, 2) + np.power(HL3, 2) + np.power(HH3, 2))
-
-    def max_blocks(E, block_size):
-        M, N = E.shape
-        return [np.max(E[i:i + block_size, j:j + block_size])
-                for i in range(0, M - block_size + 1, block_size)
-                for j in range(0, N - block_size + 1, block_size)]
-
-    Emax1 = np.array(max_blocks(E1, 8))
-    Emax2 = np.array(max_blocks(E2, 4))
-    Emax3 = np.array(max_blocks(E3, 2))
-
-    EdgePoint = (Emax1 > threshold) | (Emax2 > threshold) | (Emax3 > threshold)
-    RGstructure = (Emax1 < Emax2) & (Emax2 < Emax3)
-    RSstructure = (Emax2 > Emax1) & (Emax2 > Emax3)
-
-    BlurC = ((RGstructure | RSstructure) & (Emax1 < threshold)).astype(int)
-    BlurExtent = np.sum(BlurC) / (np.sum(RGstructure) + np.sum(RSstructure) + 1e-9)
-
-    return np.sum(RGstructure) / np.sum(EdgePoint), BlurExtent
-
-
-def find_images(input_dir):
-    for root, _, files in os.walk(input_dir):
-        for file in files:
-            if file.lower().endswith(('.jpg', '.jpeg', '.png')):
-                yield os.path.join(root, file)
-
-
-def parse_model_output(output):
+def parse_model_output(output: str) -> Dict[str, str]:
+    """Parse model output into dictionary."""
     return {
         str(i): line.split(". ", 1)[-1]
         for i, line in enumerate(output.strip().split("\n"), start=1)
     }
 
-
-def generate_event(photo_obj):
+def generate_event(photo_elements: Dict[str, str]) -> str:
+    """Generate random event based on photo elements."""
     subjects = ["Strange amphibian", "major", "not so secret disposal company", "crazy duck", "very normal alien"]
     verbs = ["jumps over", "solves", "paints", "explores", "repairs", "builds", "eats", "boils"]
     adjectives = ["lazy", "mysterious", "vibrant", "ancient", "futuristic", "dark"]
-    return f"A {random.choice(subjects)} {random.choice(verbs)} a {random.choice(adjectives)} {random.choice(list(photo_obj.values()))}."
+    
+    element = random.choice(list(photo_elements.values())) if photo_elements else "object"
+    return f"A {random.choice(subjects)} {random.choice(verbs)} a {random.choice(adjectives)} {element}."
 
-
-def generate_prompt(event, weather, calendar, length, gemma, openai):
+def generate_prompt(event: str, weather: str, calendar: datetime, length: int) -> str:
+    """Generate prompt for story generation."""
     dynamic_prompt = f"Setting: Langate, {calendar.month}/{calendar.day}, {weather}. Event: {event}. Create a {length}-word real-time report on this event. "
-    base = """
+    base = f"""
         Create a story in present tense like it's being told by a radio community announcement host who's in the town of Langate. Act calm, and largely unbothered by supernatural happenings.
-        Report in present tense on today's {month}/{day} terrifying or absurd events in a dry, eerie tone laced with dark humor.
-    """.format(month=calendar.month, day=calendar.day)
+        Report in present tense on today's {calendar.month}/{calendar.day} terrifying or absurd events in a dry, eerie tone laced with dark humor.
+    """
+    return f"{base}{dynamic_prompt}"
 
-    if gemma:
-        return f"<start_of_turn>user\n{base}{dynamic_prompt}\n<end_of_turn>\n<start_of_turn>model"
-    elif openai:
-        return dynamic_prompt
-    else:
-        return f"{base}{dynamic_prompt}"
-
-
-def text_for_table(text):
+def clean_text(text: str) -> str:
+    """Clean text for processing."""
     return ' '.join(line.strip() for line in text.splitlines() if line.strip())
 
+async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
+    """
+    Analyze image using OpenAI Vision API.
+    """
+    global openai_client
+    
+    if not openai_client:
+        raise HTTPException(status_code=500, detail="OpenAI client not initialized")
+    
+    try:
+        # Convert image to base64
+        image_b64 = base64.b64encode(image_data).decode('utf-8')
+        
+        response = openai_client.chat.completions.create(
+            model="gpt-4-vision-preview",
+            messages=[{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text", 
+                        "text": "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
+                    },
+                    {
+                        "type": "image_url", 
+                        "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}
+                    }
+                ]
+            }],
+            max_tokens=150
+        )
+        
+        return parse_model_output(response.choices[0].message.content)
+        
+    except Exception as e:
+        print(f"Error analyzing image: {e}")
+        # Return fallback elements
+        return {"1": "building", "2": "tree", "3": "sky"}
 
-async def run_pipeline(video_path, weather="foggy", length=200, gemma=False, openai=True, voice="af_heart"):
-    start_total_time = time.time()
-    p = Processor(nth_frame=10, max_frames=2000, process_frame=save_frames, verbose=True)
-    p.params.output_dir = "videos/keyframes"
-    p.process(video_file=video_path)
+async def generate_story_with_api(prompt: str) -> str:
+    """
+    Generate story using Hugging Face Inference API.
+    """
+    global hf_headers
+    
+    if not hf_headers:
+        raise HTTPException(status_code=500, detail="Hugging Face client not initialized")
+    
+    try:
+        import aiohttp
+        
+        API_URL = "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium"
+        
+        payload = {
+            "inputs": prompt,
+            "parameters": {
+                "max_length": 500,
+                "temperature": 0.7,
+                "do_sample": True
+            }
+        }
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.post(API_URL, headers=hf_headers, json=payload) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    if isinstance(result, list) and len(result) > 0:
+                        return result[0].get('generated_text', prompt)
+                    else:
+                        return "In the misty town of Langate today, residents report unusual occurrences. The mayor assures everyone this is perfectly normal."
+                else:
+                    print(f"HF API error: {response.status}")
+                    return "In the misty town of Langate today, residents report unusual occurrences. The mayor assures everyone this is perfectly normal."
+                    
+    except Exception as e:
+        print(f"Error generating story: {e}")
+        return "In the misty town of Langate today, residents report unusual occurrences involving local wildlife and mysterious structures. The mayor assures everyone this is perfectly normal for a Tuesday."
 
-    threshold = 35
-    best_result = 1.0
-    best_result_path = None
-
-    for input_path in find_images(p.params.output_dir):
-        try:
-            I = cv2.imread(input_path)
-            _, blurext = blur_detect(I, threshold)
-            if blurext < best_result:
-                best_result = blurext
-                best_result_path = input_path
-        except Exception:
-            continue
-
-    if not best_result_path:
-        return {"error": "No suitable frame found."}
-
-    image = Image.open(best_result_path)
-    image = image.resize((image.width // 10, image.height // 10), Image.LANCZOS)
-    encoded_image = moonModel.encode_image(image)
-
-    answer = moonModel.query(encoded_image, "list three different elements of the image in order of distance")["answer"]
-    parsed_variables = parse_model_output(answer)
-
-    event = generate_event(parsed_variables)
-    prompt = generate_prompt(event, weather, datetime.now(), length, gemma, openai)
-
-    client = OpenAI(base_url='http://localhost:11434/v1/', api_key='ollama')
-    chat_completion = client.chat.completions.create(
-        messages=[
-            {"role": "system", "content": "You are a radio community announcement host in Langate."},
-            {"role": "user", "content": [{"type": "text", "text": prompt}]}
-        ],
-        model='qwen2.5:7b',
-    )
-
-    clean_result = text_for_table(chat_completion.choices[0].message.content)
-    audio_files = []
-
-    for i, (_, _, audio) in enumerate(pipeline(clean_result, voice=voice, speed=1, split_pattern=r'\n+')):
-        file_path = f"output_{i}.wav"
-        sf.write(file_path, audio, 24000)
-        audio_files.append(file_path)
-
-    total_time = time.time() - start_total_time
-    return {
-        "text": clean_result,
-        "audio_files": audio_files,
-        "event": event,
-        "time_taken": f"{int(total_time // 60)}:{int(total_time % 60):02d}"
+async def generate_audio_with_api(text: str, voice: str) -> List[bytes]:
+    """
+    Generate audio using ElevenLabs API.
+    """
+    global elevenlabs_headers
+    
+    if not elevenlabs_headers:
+        raise HTTPException(status_code=500, detail="ElevenLabs client not initialized")
+    
+    # Voice mapping (you can customize these with your ElevenLabs voice IDs)
+    voice_map = {
+        "af_heart": "21m00Tcm4TlvDq8ikWAM",  # Rachel
+        "default": "21m00Tcm4TlvDq8ikWAM",
+        "male": "29vD33N1CtxCmqQRPOHJ",      # Drew
+        "female": "21m00Tcm4TlvDq8ikWAM"     # Rachel
     }
+    
+    voice_id = voice_map.get(voice, voice_map["default"])
+    
+    try:
+        import aiohttp
+        
+        url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+        
+        payload = {
+            "text": text,
+            "model_id": "eleven_monolingual_v1",
+            "voice_settings": {
+                "stability": 0.5,
+                "similarity_boost": 0.5,
+                "style": 0.0,
+                "use_speaker_boost": True
+            }
+        }
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=elevenlabs_headers, json=payload) as response:
+                if response.status == 200:
+                    audio_data = await response.read()
+                    return [audio_data]
+                else:
+                    print(f"ElevenLabs API error: {response.status}")
+                    error_text = await response.text()
+                    print(f"Error details: {error_text}")
+                    # Return fallback audio (silence)
+                    return [create_fallback_audio()]
+                    
+    except Exception as e:
+        print(f"Error generating audio: {e}")
+        return [create_fallback_audio()]
+
+def create_fallback_audio() -> bytes:
+    """Create a fallback audio file (1 second of silence)."""
+    try:
+        silence = np.zeros(24000, dtype=np.float32)  # 1 second at 24kHz
+        audio_buffer = io.BytesIO()
+        sf.write(audio_buffer, silence, 24000, format='WAV')
+        audio_buffer.seek(0)
+        return audio_buffer.read()
+    except Exception:
+        return b''  # Empty bytes as last resort
+
+@app.post("/generate-story", response_model=StoryResponse)
+async def generate_story_from_image(
+    file: UploadFile = File(...),
+    weather: str = "foggy",
+    length: int = 200,
+    voice: str = "af_heart"
+):
+    """
+    Generate a Langate story from an uploaded image.
+    """
+    start_time = datetime.now()
+    
+    try:
+        # Validate file type
+        if not file.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="File must be an image")
+        
+        # Read image data
+        image_data = await file.read()
+        
+        # Validate image size (limit to 10MB)
+        if len(image_data) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Image too large (max 10MB)")
+        
+        # Process image
+        try:
+            image = Image.open(io.BytesIO(image_data))
+            # Resize for processing efficiency
+            image = image.resize((image.width // 4, image.height // 4), Image.LANCZOS)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid image format: {str(e)}")
+        
+        # Analyze image (replace with cloud API call)
+        photo_elements = await analyze_image_with_api(image_data)
+        
+        # Generate event and story
+        event = generate_event(photo_elements)
+        prompt = generate_prompt(event, weather, datetime.now(), length)
+        
+        # Generate story text (replace with cloud API call)
+        story_text = await generate_story_with_api(prompt)
+        clean_story = clean_text(story_text)
+        
+        # Generate audio (replace with cloud API call)
+        audio_bytes_list = await generate_audio_with_api(clean_story, voice)
+        
+        # Convert audio to base64 for JSON response
+        audio_files_b64 = []
+        for i, audio_bytes in enumerate(audio_bytes_list):
+            audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+            audio_files_b64.append(audio_b64)
+        
+        # Calculate processing time
+        end_time = datetime.now()
+        processing_time = str(end_time - start_time)
+        
+        return StoryResponse(
+            audio_files=audio_files_b64,
+            text=clean_story,
+            event=event,
+            processing_time=processing_time
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Processing error: {str(e)}")
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
+@app.get("/")
+async def root():
+    """Root endpoint with API info."""
+    return {
+        "message": "Langate Story Generator API",
+        "version": "1.0.0",
+        "endpoints": {
+            "POST /generate-story": "Generate story from image",
+            "GET /health": "Health check",
+            "GET /docs": "API documentation"
+        }
+    }
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
