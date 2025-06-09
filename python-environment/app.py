@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 import asyncio
 import os
 from werkzeug.utils import secure_filename
-from main_pipeline import run_pipeline  # Assuming your pipeline code is in main_pipeline.py
+from complete_webapp_pipeline import run_pipeline #getting the pipeline
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
