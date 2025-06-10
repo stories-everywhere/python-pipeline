@@ -189,7 +189,8 @@ async def generate_story_with_api(prompt: str) -> str:
                     result = await response.json()
                     if isinstance(result, list) and len(result) > 0:
                         # return result[0].get('generated_text', prompt)
-                        return result.json()
+                        # return result.json()
+                        return result["choices"][0]["message"]
                     else:
                         return "In the misty town of Langate today, residents report unusual occurrences. The mayor assures everyone this is perfectly normal."
                 else:
