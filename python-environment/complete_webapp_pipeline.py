@@ -64,7 +64,7 @@ async def initialize_apis():
         # hf_headers = {"Authorization": f"Bearer {hf_api_key}"} #not using the huggingface_hub lib
         hf_client = InferenceClient(
             provider="auto",
-            api_key=os.environ[hf_api_key],
+            api_key= hf_api_key,
         )
   
 
