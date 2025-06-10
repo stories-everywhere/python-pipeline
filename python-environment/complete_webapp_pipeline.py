@@ -197,7 +197,7 @@ async def generate_audio_with_api(text: str, voice: str) -> List[bytes]:
         audio_bytes = hf_client.text_to_speech(
             text,
             model="hexgrad/Kokoro-82M",
-            voice=voice
+            # voice=voice
         )  
         
         # Fix: Ensure we return a list of bytes
