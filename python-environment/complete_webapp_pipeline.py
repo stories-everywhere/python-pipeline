@@ -17,6 +17,7 @@ from fastapi.responses import JSONResponse
 import uvicorn
 from pydantic import BaseModel
 
+from huggingface_hub import InferenceClient
 
 
 app = FastAPI(title="Langate Story Generator API")
@@ -57,7 +58,6 @@ async def initialize_apis():
         openai_client = openai.OpenAI(api_key=openai_api_key)
         
         # Initialize Hugging Face headers
-        from huggingface_hub import InferenceClient
         hf_api_key = os.getenv("HUGGINGFACE_API_KEY")
         if not hf_api_key:
             raise ValueError("HUGGINGFACE_API_KEY environment variable not set")
@@ -121,35 +121,67 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
     """
     Analyze image using OpenAI Vision API.
     """
-    global openai_client
+    # global openai_client
     
-    if not openai_client:
-        print("OpenAI client not available, using fallback")
+    # if not openai_client:
+    #     print("OpenAI client not available, using fallback")
+    #     return {"1": "building", "2": "tree", "3": "sky"}
+    
+    # try:
+    #     # Convert image to base64
+    #     image_b64 = base64.b64encode(image_data).decode('utf-8')
+        
+    #     response = openai_client.chat.completions.create(
+    #         model="gpt-4-vision-preview",
+    #         messages=[{
+    #             "role": "user",
+    #             "content": [
+    #                 {
+    #                     "type": "text", 
+    #                     "text": "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
+    #                 },
+    #                 {
+    #                     "type": "image_url", 
+    #                     "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}
+    #                 }
+    #             ]
+    #         }],
+    #         max_tokens=150
+    #     )
+        
+    #     return parse_model_output(response.choices[0].message.content)
+        
+
+    global hf_client
+    if not hf_client:
+        print("hf client not available, using fallback")
         return {"1": "building", "2": "tree", "3": "sky"}
-    
+
     try:
         # Convert image to base64
         image_b64 = base64.b64encode(image_data).decode('utf-8')
         
-        response = openai_client.chat.completions.create(
-            model="gpt-4-vision-preview",
-            messages=[{
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text", 
-                        "text": "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
-                    },
-                    {
-                        "type": "image_url", 
-                        "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}
-                    }
-                ]
-            }],
-            max_tokens=150
+
+        completion = hf_client.chat.completions.create(
+            model="Qwen/Qwen2.5-VL-32B-Instruct",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}
+                        }
+                    ]
+                }
+            ],
         )
-        
-        return parse_model_output(response.choices[0].message.content)
+
+        return  completion.choices[0].message
         
     except Exception as e:
         print(f"Error analyzing image: {e}")
@@ -231,10 +263,12 @@ async def generate_audio_with_api(text: str, voice: str) -> List[bytes]:
     """
     Generate audio using ElevenLabs API.
     """
-    global elevenlabs_headers
+    # global elevenlabs_headers
     
-    if not elevenlabs_headers:
-        print("ElevenLabs client not available, using fallback")
+    # if not elevenlabs_headers:
+    global hf_client
+    if not hf_client:
+        print("hf client not available, using fallback")
         return [create_fallback_audio()]
     
     # Voice mapping (you can customize these with your ElevenLabs voice IDs)
@@ -248,33 +282,41 @@ async def generate_audio_with_api(text: str, voice: str) -> List[bytes]:
     voice_id = voice_map.get(voice, voice_map["default"])
     
     try:
-        import aiohttp
+        # import aiohttp
         
-        url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+        # url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
         
-        payload = {
-            "text": text,
-            "model_id": "eleven_monolingual_v1",
-            "voice_settings": {
-                "stability": 0.5,
-                "similarity_boost": 0.5,
-                "style": 0.0,
-                "use_speaker_boost": True
-            }
-        }
+        # payload = {
+        #     "text": text,
+        #     "model_id": "eleven_monolingual_v1",
+        #     "voice_settings": {
+        #         "stability": 0.5,
+        #         "similarity_boost": 0.5,
+        #         "style": 0.0,
+        #         "use_speaker_boost": True
+        #     }
+        # }
         
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, headers=elevenlabs_headers, json=payload) as response:
-                if response.status == 200:
-                    audio_data = await response.read()
-                    return [audio_data]
-                else:
-                    print(f"ElevenLabs API error: {response.status}")
-                    error_text = await response.text()
-                    print(f"Error details: {error_text}")
-                    # Return fallback audio (silence)
-                    return [create_fallback_audio()]
-                    
+        # async with aiohttp.ClientSession() as session:
+        #     async with session.post(url, headers=elevenlabs_headers, json=payload) as response:
+        #         if response.status == 200:
+        #             audio_data = await response.read()
+        #             return [audio_data]
+        #         else:
+        #             print(f"ElevenLabs API error: {response.status}")
+        #             error_text = await response.text()
+        #             print(f"Error details: {error_text}")
+        #             # Return fallback audio (silence)
+        #             return [create_fallback_audio()]
+
+        # audio is returned as bytes
+        audio = hf_client.text_to_speech(
+            "The answer to the universe is 42",
+            model="hexgrad/Kokoro-82M",
+            voice = "af_heart"
+        )  
+        return audio
+             
     except Exception as e:
         print(f"Error generating audio: {e}")
         return [create_fallback_audio()]
@@ -290,7 +332,7 @@ def create_fallback_audio() -> bytes:
     except Exception:
         return b''  # Empty bytes as last resort
 
-@app.post("/generate-story", response_model=StoryResponse.text)
+@app.post("/generate-story", response_model=StoryResponse)
 async def generate_story_from_image(
     file: UploadFile = File(...),
     weather: str = "foggy",
