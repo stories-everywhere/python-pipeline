@@ -16,6 +16,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import JSONResponse
 import uvicorn
 from pydantic import BaseModel
+import requests
 
 # Import your ML libraries (these will need to be hosted remotely)
 # import moondream as moonmd
@@ -61,7 +62,8 @@ async def initialize_apis():
         if not hf_api_key:
             raise ValueError("HUGGINGFACE_API_KEY environment variable not set")
         hf_headers = {"Authorization": f"Bearer {hf_api_key}"}
-        
+  
+
         # Initialize ElevenLabs headers
         elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
         if not elevenlabs_api_key:
@@ -162,8 +164,16 @@ async def generate_story_with_api(prompt: str) -> str:
     try:
         import aiohttp
         
-        API_URL = "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium"
-        
+        API_URL = "https://router.huggingface.co/hf-inference/models/sarvamai/sarvam-m"
+
+        # def query(payload):
+        #     response = requests.post(API_URL, headers=headers, json=payload)
+        #     return response.json()
+
+        # output = query({
+        #     "inputs": "Can you please let us know more details about your ",
+        # })
+
         payload = {
             "inputs": prompt,
             "parameters": {
@@ -178,7 +188,8 @@ async def generate_story_with_api(prompt: str) -> str:
                 if response.status == 200:
                     result = await response.json()
                     if isinstance(result, list) and len(result) > 0:
-                        return result[0].get('generated_text', prompt)
+                        # return result[0].get('generated_text', prompt)
+                        return result.json()
                     else:
                         return "In the misty town of Langate today, residents report unusual occurrences. The mayor assures everyone this is perfectly normal."
                 else:
