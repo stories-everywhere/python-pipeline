@@ -290,7 +290,7 @@ def create_fallback_audio() -> bytes:
     except Exception:
         return b''  # Empty bytes as last resort
 
-@app.post("/generate-story", response_model=StoryResponse)
+@app.post("/generate-story", response_model=StoryResponse.text)
 async def generate_story_from_image(
     file: UploadFile = File(...),
     weather: str = "foggy",
