@@ -47,7 +47,7 @@ elevenlabs_headers = None
 # Startup event to initialize API clients
 @app.on_event("startup")
 async def initialize_apis():
-    global openai_client,hf_client , elevenlabs_headers, #hf_headers
+    global openai_client,hf_client , elevenlabs_headers #hf_headers
     try:
         # Initialize OpenAI client
         import openai
