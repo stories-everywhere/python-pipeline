@@ -16,17 +16,15 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import JSONResponse
 import uvicorn
 from pydantic import BaseModel
-# import requests
 
-# Import your ML libraries (these will need to be hosted remotely)
-# import moondream as moonmd
-# from kokoro import KPipeline
+
 
 app = FastAPI(title="Langate Story Generator API")
 
 # Global variables for API clients
 openai_client = None
-hf_headers = None
+hf_client = None
+# hf_headers = None
 elevenlabs_headers = None
 
 class StoryRequest(BaseModel):
@@ -42,13 +40,14 @@ class StoryResponse(BaseModel):
 
 # API clients - no need for global model loading
 openai_client = None
-hf_headers = None
+hf_client =  None
+# hf_headers = None
 elevenlabs_headers = None
 
 # Startup event to initialize API clients
 @app.on_event("startup")
 async def initialize_apis():
-    global openai_client, hf_headers, elevenlabs_headers
+    global openai_client,hf_client , elevenlabs_headers, #hf_headers
     try:
         # Initialize OpenAI client
         import openai
@@ -58,10 +57,15 @@ async def initialize_apis():
         openai_client = openai.OpenAI(api_key=openai_api_key)
         
         # Initialize Hugging Face headers
+        from huggingface_hub import InferenceClient
         hf_api_key = os.getenv("HUGGINGFACE_API_KEY")
         if not hf_api_key:
             raise ValueError("HUGGINGFACE_API_KEY environment variable not set")
-        hf_headers = {"Authorization": f"Bearer {hf_api_key}"}
+        # hf_headers = {"Authorization": f"Bearer {hf_api_key}"} #not using the huggingface_hub lib
+        hf_client = InferenceClient(
+            provider="auto",
+            api_key=os.environ[hf_api_key],
+        )
   
 
         # Initialize ElevenLabs headers
@@ -76,7 +80,8 @@ async def initialize_apis():
         
         print("API clients initialized successfully")
         print(f"OpenAI client ready: {openai_client is not None}")
-        print(f"Hugging Face headers ready: {hf_headers is not None}")
+        # print(f"Hugging Face headers ready: {hf_headers is not None}")
+        print(f"Hugging Face headers ready: {hf_client is not None}")
         print(f"ElevenLabs headers ready: {elevenlabs_headers is not None}")
         
     except Exception as e:
@@ -155,48 +160,69 @@ async def generate_story_with_api(prompt: str) -> str:
     """
     Generate story using Hugging Face Inference API.
     """
-    global hf_headers
+    global hf_client #hf_headers
     
-    if not hf_headers:
+    # if not hf_headers:
+    #     print("Hugging Face client not available, using fallback")
+    #     return "In the misty town of Langate today, residents report unusual occurrences involving local wildlife and mysterious structures. The mayor assures everyone this is perfectly normal for a Tuesday."
+    
+    # try:
+    #     import aiohttp
+        
+    #     API_URL = "https://router.huggingface.co/hf-inference/models/sarvamai/sarvam-m"
+
+    #     # def query(payload):
+    #     #     response = requests.post(API_URL, headers=headers, json=payload)
+    #     #     return response.json()
+
+    #     # output = query({
+    #     #     "inputs": "Can you please let us know more details about your ",
+    #     # })
+
+    #     payload = {
+    #         "inputs": prompt,
+    #         "parameters": {
+    #             "max_length": 500,
+    #             "temperature": 0.7,
+    #             "do_sample": True
+    #         }
+    #     }
+        
+    #     async with aiohttp.ClientSession() as session:
+    #         async with session.post(API_URL, headers=hf_headers, json=payload) as response:
+    #             if response.status == 200:
+    #                 result = await response.json()
+    #                 if isinstance(result, list) and len(result) > 0:
+    #                     # return result[0].get('generated_text', prompt)
+    #                     # return result.json()
+    #                     return result["choices"][0]["message"]
+    #                 else:
+    #                     return "In the misty town of Langate today, residents report unusual occurrences. The mayor assures everyone this is perfectly normal."
+    #             else:
+    #                 print(f"HF API error: {response.status}")
+    #                 return "In the misty town of Langate today, residents report unusual occurrences. The mayor assures everyone this is perfectly normal."
+                    
+    # except Exception as e:
+    #     print(f"Error generating story: {e}")
+    #     return "In the misty town of Langate today, residents report unusual occurrences involving local wildlife and mysterious structures. The mayor assures everyone this is perfectly normal for a Tuesday."
+
+    if not hf_client:
         print("Hugging Face client not available, using fallback")
         return "In the misty town of Langate today, residents report unusual occurrences involving local wildlife and mysterious structures. The mayor assures everyone this is perfectly normal for a Tuesday."
-    
+        
     try:
-        import aiohttp
-        
-        API_URL = "https://router.huggingface.co/hf-inference/models/sarvamai/sarvam-m"
+        completion = hf_client.chat.completions.create(
+            model="deepseek-ai/DeepSeek-V3-0324",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+        )
 
-        # def query(payload):
-        #     response = requests.post(API_URL, headers=headers, json=payload)
-        #     return response.json()
-
-        # output = query({
-        #     "inputs": "Can you please let us know more details about your ",
-        # })
-
-        payload = {
-            "inputs": prompt,
-            "parameters": {
-                "max_length": 500,
-                "temperature": 0.7,
-                "do_sample": True
-            }
-        }
-        
-        async with aiohttp.ClientSession() as session:
-            async with session.post(API_URL, headers=hf_headers, json=payload) as response:
-                if response.status == 200:
-                    result = await response.json()
-                    if isinstance(result, list) and len(result) > 0:
-                        # return result[0].get('generated_text', prompt)
-                        # return result.json()
-                        return result["choices"][0]["message"]
-                    else:
-                        return "In the misty town of Langate today, residents report unusual occurrences. The mayor assures everyone this is perfectly normal."
-                else:
-                    print(f"HF API error: {response.status}")
-                    return "In the misty town of Langate today, residents report unusual occurrences. The mayor assures everyone this is perfectly normal."
-                    
+        return completion.choices[0].message
+    
     except Exception as e:
         print(f"Error generating story: {e}")
         return "In the misty town of Langate today, residents report unusual occurrences involving local wildlife and mysterious structures. The mayor assures everyone this is perfectly normal for a Tuesday."
