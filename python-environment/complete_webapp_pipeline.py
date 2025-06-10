@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime
 from typing import List, Dict, Any
 import base64
+from contextlib import asynccontextmanager
 
 import numpy as np
 import cv2
@@ -20,12 +21,9 @@ from pydantic import BaseModel
 from huggingface_hub import InferenceClient
 
 
-app = FastAPI(title="Langate Story Generator API")
-
 # Global variables for API clients
 openai_client = None
 hf_client = None
-# hf_headers = None
 elevenlabs_headers = None
 
 class StoryRequest(BaseModel):
@@ -39,54 +37,53 @@ class StoryResponse(BaseModel):
     event: str
     processing_time: str
 
-# API clients - no need for global model loading
-openai_client = None
-hf_client =  None
-# hf_headers = None
-elevenlabs_headers = None
-
-# Startup event to initialize API clients
-@app.on_event("startup")
-async def initialize_apis():
-    global openai_client,hf_client , elevenlabs_headers #hf_headers
+# Lifespan event handler to replace deprecated on_event
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    global openai_client, hf_client, elevenlabs_headers
     try:
-        # Initialize OpenAI client
-        import openai
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        if not openai_api_key:
-            raise ValueError("OPENAI_API_KEY environment variable not set")
-        openai_client = openai.OpenAI(api_key=openai_api_key)
+        # Initialize OpenAI client (commented out since you're using HF)
+        # import openai
+        # openai_api_key = os.getenv("OPENAI_API_KEY")
+        # if not openai_api_key:
+        #     raise ValueError("OPENAI_API_KEY environment variable not set")
+        # openai_client = openai.OpenAI(api_key=openai_api_key)
         
-        # Initialize Hugging Face headers
+        # Initialize Hugging Face client
         hf_api_key = os.getenv("HUGGINGFACE_API_KEY")
         if not hf_api_key:
             raise ValueError("HUGGINGFACE_API_KEY environment variable not set")
-        # hf_headers = {"Authorization": f"Bearer {hf_api_key}"} #not using the huggingface_hub lib
+        
         hf_client = InferenceClient(
             provider="auto",
-            api_key= hf_api_key,
+            api_key=hf_api_key,
         )
-  
 
-        # Initialize ElevenLabs headers
-        elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
-        if not elevenlabs_api_key:
-            raise ValueError("ELEVENLABS_API_KEY environment variable not set")
-        elevenlabs_headers = {
-            "Accept": "audio/mpeg",
-            "Content-Type": "application/json",
-            "xi-api-key": elevenlabs_api_key
-        }
+        # Initialize ElevenLabs headers (commented out since you're using HF)
+        # elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
+        # if not elevenlabs_api_key:
+        #     raise ValueError("ELEVENLABS_API_KEY environment variable not set")
+        # elevenlabs_headers = {
+        #     "Accept": "audio/mpeg",
+        #     "Content-Type": "application/json",
+        #     "xi-api-key": elevenlabs_api_key
+        # }
         
         print("API clients initialized successfully")
-        print(f"OpenAI client ready: {openai_client is not None}")
-        # print(f"Hugging Face headers ready: {hf_headers is not None}")
-        print(f"Hugging Face headers ready: {hf_client is not None}")
-        print(f"ElevenLabs headers ready: {elevenlabs_headers is not None}")
+        print(f"Hugging Face client ready: {hf_client is not None}")
         
     except Exception as e:
         print(f"Error initializing API clients: {e}")
         raise e
+    
+    yield
+    
+    # Shutdown (cleanup if needed)
+    pass
+
+# Initialize FastAPI app with lifespan
+app = FastAPI(title="Langate Story Generator API", lifespan=lifespan)
 
 def parse_model_output(output: str) -> Dict[str, str]:
     """Parse model output into dictionary."""
@@ -119,49 +116,17 @@ def clean_text(text: str) -> str:
 
 async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
     """
-    Analyze image using OpenAI Vision API.
+    Analyze image using Hugging Face Vision API.
     """
-    # global openai_client
-    
-    # if not openai_client:
-    #     print("OpenAI client not available, using fallback")
-    #     return {"1": "building", "2": "tree", "3": "sky"}
-    
-    # try:
-    #     # Convert image to base64
-    #     image_b64 = base64.b64encode(image_data).decode('utf-8')
-        
-    #     response = openai_client.chat.completions.create(
-    #         model="gpt-4-vision-preview",
-    #         messages=[{
-    #             "role": "user",
-    #             "content": [
-    #                 {
-    #                     "type": "text", 
-    #                     "text": "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
-    #                 },
-    #                 {
-    #                     "type": "image_url", 
-    #                     "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}
-    #                 }
-    #             ]
-    #         }],
-    #         max_tokens=150
-    #     )
-        
-    #     return parse_model_output(response.choices[0].message.content)
-        
-
     global hf_client
     if not hf_client:
-        print("hf client not available, using fallback")
+        print("HF client not available, using fallback")
         return {"1": "building", "2": "tree", "3": "sky"}
 
     try:
         # Convert image to base64
         image_b64 = base64.b64encode(image_data).decode('utf-8')
         
-
         completion = hf_client.chat.completions.create(
             model="Qwen/Qwen2.5-VL-32B-Instruct",
             messages=[
@@ -181,7 +146,9 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
             ],
         )
 
-        return  completion.choices[0].message
+        # Fix: Extract content from the response properly
+        response_content = completion.choices[0].message.content
+        return parse_model_output(response_content)
         
     except Exception as e:
         print(f"Error analyzing image: {e}")
@@ -192,52 +159,8 @@ async def generate_story_with_api(prompt: str) -> str:
     """
     Generate story using Hugging Face Inference API.
     """
-    global hf_client #hf_headers
+    global hf_client
     
-    # if not hf_headers:
-    #     print("Hugging Face client not available, using fallback")
-    #     return "In the misty town of Langate today, residents report unusual occurrences involving local wildlife and mysterious structures. The mayor assures everyone this is perfectly normal for a Tuesday."
-    
-    # try:
-    #     import aiohttp
-        
-    #     API_URL = "https://router.huggingface.co/hf-inference/models/sarvamai/sarvam-m"
-
-    #     # def query(payload):
-    #     #     response = requests.post(API_URL, headers=headers, json=payload)
-    #     #     return response.json()
-
-    #     # output = query({
-    #     #     "inputs": "Can you please let us know more details about your ",
-    #     # })
-
-    #     payload = {
-    #         "inputs": prompt,
-    #         "parameters": {
-    #             "max_length": 500,
-    #             "temperature": 0.7,
-    #             "do_sample": True
-    #         }
-    #     }
-        
-    #     async with aiohttp.ClientSession() as session:
-    #         async with session.post(API_URL, headers=hf_headers, json=payload) as response:
-    #             if response.status == 200:
-    #                 result = await response.json()
-    #                 if isinstance(result, list) and len(result) > 0:
-    #                     # return result[0].get('generated_text', prompt)
-    #                     # return result.json()
-    #                     return result["choices"][0]["message"]
-    #                 else:
-    #                     return "In the misty town of Langate today, residents report unusual occurrences. The mayor assures everyone this is perfectly normal."
-    #             else:
-    #                 print(f"HF API error: {response.status}")
-    #                 return "In the misty town of Langate today, residents report unusual occurrences. The mayor assures everyone this is perfectly normal."
-                    
-    # except Exception as e:
-    #     print(f"Error generating story: {e}")
-    #     return "In the misty town of Langate today, residents report unusual occurrences involving local wildlife and mysterious structures. The mayor assures everyone this is perfectly normal for a Tuesday."
-
     if not hf_client:
         print("Hugging Face client not available, using fallback")
         return "In the misty town of Langate today, residents report unusual occurrences involving local wildlife and mysterious structures. The mayor assures everyone this is perfectly normal for a Tuesday."
@@ -253,7 +176,8 @@ async def generate_story_with_api(prompt: str) -> str:
             ],
         )
 
-        return completion.choices[0].message
+        # Fix: Extract content from the response properly
+        return completion.choices[0].message.content
     
     except Exception as e:
         print(f"Error generating story: {e}")
@@ -261,61 +185,26 @@ async def generate_story_with_api(prompt: str) -> str:
 
 async def generate_audio_with_api(text: str, voice: str) -> List[bytes]:
     """
-    Generate audio using ElevenLabs API.
+    Generate audio using Hugging Face TTS API.
     """
-    # global elevenlabs_headers
-    
-    # if not elevenlabs_headers:
     global hf_client
     if not hf_client:
-        print("hf client not available, using fallback")
+        print("HF client not available, using fallback")
         return [create_fallback_audio()]
     
-    # Voice mapping (you can customize these with your ElevenLabs voice IDs)
-    voice_map = {
-        "af_heart": "21m00Tcm4TlvDq8ikWAM",  # Rachel
-        "default": "21m00Tcm4TlvDq8ikWAM",
-        "male": "29vD33N1CtxCmqQRPOHJ",      # Drew
-        "female": "21m00Tcm4TlvDq8ikWAM"     # Rachel
-    }
-    
-    voice_id = voice_map.get(voice, voice_map["default"])
-    
     try:
-        # import aiohttp
-        
-        # url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
-        
-        # payload = {
-        #     "text": text,
-        #     "model_id": "eleven_monolingual_v1",
-        #     "voice_settings": {
-        #         "stability": 0.5,
-        #         "similarity_boost": 0.5,
-        #         "style": 0.0,
-        #         "use_speaker_boost": True
-        #     }
-        # }
-        
-        # async with aiohttp.ClientSession() as session:
-        #     async with session.post(url, headers=elevenlabs_headers, json=payload) as response:
-        #         if response.status == 200:
-        #             audio_data = await response.read()
-        #             return [audio_data]
-        #         else:
-        #             print(f"ElevenLabs API error: {response.status}")
-        #             error_text = await response.text()
-        #             print(f"Error details: {error_text}")
-        #             # Return fallback audio (silence)
-        #             return [create_fallback_audio()]
-
-        # audio is returned as bytes
-        audio = hf_client.text_to_speech(
-            "The answer to the universe is 42",
+        # Fix: Handle the TTS API call properly
+        audio_bytes = hf_client.text_to_speech(
+            text,
             model="hexgrad/Kokoro-82M",
-            voice = "af_heart"
+            voice=voice
         )  
-        return audio
+        
+        # Fix: Ensure we return a list of bytes
+        if isinstance(audio_bytes, bytes):
+            return [audio_bytes]
+        else:
+            return [create_fallback_audio()]
              
     except Exception as e:
         print(f"Error generating audio: {e}")
@@ -364,25 +253,33 @@ async def generate_story_from_image(
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid image format: {str(e)}")
         
-        # Analyze image (replace with cloud API call)
+        # Analyze image
         photo_elements = await analyze_image_with_api(image_data)
         
         # Generate event and story
         event = generate_event(photo_elements)
         prompt = generate_prompt(event, weather, datetime.now(), length)
         
-        # Generate story text (replace with cloud API call)
+        # Generate story text
         story_text = await generate_story_with_api(prompt)
         clean_story = clean_text(story_text)
         
-        # Generate audio (replace with cloud API call)
+        # Generate audio
         audio_bytes_list = await generate_audio_with_api(clean_story, voice)
         
         # Convert audio to base64 for JSON response
         audio_files_b64 = []
         for i, audio_bytes in enumerate(audio_bytes_list):
-            audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
-            audio_files_b64.append(audio_b64)
+            if audio_bytes:  # Check if audio_bytes is not empty
+                audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+                audio_files_b64.append(audio_b64)
+        
+        # If no audio was generated, add a fallback
+        if not audio_files_b64:
+            fallback_audio = create_fallback_audio()
+            if fallback_audio:
+                audio_b64 = base64.b64encode(fallback_audio).decode('utf-8')
+                audio_files_b64.append(audio_b64)
         
         # Calculate processing time
         end_time = datetime.now()
@@ -398,6 +295,7 @@ async def generate_story_from_image(
     except HTTPException:
         raise
     except Exception as e:
+        print(f"Unexpected error in generate_story_from_image: {e}")
         raise HTTPException(status_code=500, detail=f"Processing error: {str(e)}")
 
 @app.get("/health")
