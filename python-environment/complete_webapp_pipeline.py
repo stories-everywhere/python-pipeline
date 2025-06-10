@@ -16,7 +16,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import JSONResponse
 import uvicorn
 from pydantic import BaseModel
-import requests
+# import requests
 
 # Import your ML libraries (these will need to be hosted remotely)
 # import moondream as moonmd
