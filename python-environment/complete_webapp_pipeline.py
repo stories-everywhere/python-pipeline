@@ -56,7 +56,8 @@ async def lifespan(app: FastAPI):
             raise ValueError("HUGGINGFACE_API_KEY environment variable not set")
         
         hf_client = InferenceClient(
-            provider="hf-inference",
+            # provider="hf-inference",
+            provider="auto",
             api_key=hf_api_key,
         )
 
