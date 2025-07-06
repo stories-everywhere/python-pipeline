@@ -21,12 +21,14 @@ import aiohttp
 
 from huggingface_hub import InferenceClient
 import fal_client
+import moondream as md
 
 # Global variables for API clients
 openai_client = None
 hf_client = None
 elevenlabs_headers = None
 fal_client_instance = None
+md_client = None
 
 class StoryRequest(BaseModel):
     """Request model for story generation parameters."""
@@ -48,7 +50,7 @@ async def lifespan(app: FastAPI):
     Initializes API clients on startup and handles cleanup on shutdown.
     """
     # Startup - Initialize API clients
-    global openai_client, hf_client, elevenlabs_headers, fal_client_instance
+    global openai_client, hf_client, elevenlabs_headers, fal_client_instance, md_client
     try:
         # Initialize OpenAI client (currently commented out)
         # import openai
@@ -58,19 +60,29 @@ async def lifespan(app: FastAPI):
         # openai_client = openai.OpenAI(api_key=openai_api_key)
         
         # Initialize Hugging Face client for text generation and image analysis
-        hf_api_key = os.getenv("HUGGINGFACE_API_KEY")
-        if not hf_api_key:
-            raise ValueError("HUGGINGFACE_API_KEY environment variable not set")
+        # hf_api_key = os.getenv("HUGGINGFACE_API_KEY")
+        # if not hf_api_key:
+        #     raise ValueError("HUGGINGFACE_API_KEY environment variable not set")
         
-        hf_client = InferenceClient(
-            provider="auto",
-            api_key=hf_api_key,
-        )
+        # hf_client = InferenceClient(
+        #     provider="auto",
+        #     api_key=hf_api_key,
+        # )
 
         # Verify FAL API key is set (fal_client handles the key automatically)
         fal_api_key = os.getenv("FAL_KEY")
         if not fal_api_key:
             raise ValueError("FAL_KEY environment variable not set")
+        
+
+        md_api_key = os.getenv("MOONDREAM_API_KEY")
+        if not md_api_key:
+            raise ValueError("MOONDREAM_API_KEY environment variable not set")
+        
+        md_client = md.vl(
+            api_key=md_api_key,
+        )
+
         
         # Initialize ElevenLabs headers (currently commented out)
         # elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
@@ -83,7 +95,7 @@ async def lifespan(app: FastAPI):
         # }
         
         print("API clients initialized successfully")
-        print(f"Hugging Face client ready: {hf_client is not None}")
+        # print(f"Hugging Face client ready: {hf_client is not None}")
         
     except Exception as e:
         print(f"Error initializing API clients: {e}")
@@ -189,9 +201,47 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
     Returns:
         Dictionary of identified image elements
     """
-    global hf_client
-    if not hf_client:
-        print("HF client not available, using fallback")
+    # global hf_client
+    # if not hf_client:
+    #     print("HF client not available, using fallback")
+    #     return {"1": "building", "2": "tree", "3": "sky"}
+
+    # try:
+    #     # Convert image to base64 for API transmission
+    #     image_b64 = base64.b64encode(image_data).decode('utf-8')
+        
+    #     # Make API call to vision model
+    #     completion = hf_client.chat.completions.create(
+    #         model="Qwen/Qwen2.5-VL-32B-Instruct",
+    #         messages=[
+    #             {
+    #                 "role": "user",
+    #                 "content": [
+    #                     {
+    #                         "type": "text",
+    #                         "text": (
+    #                             "List three different elements of this image in order "
+    #                             "of distance from the viewer. Format as: "
+    #                             "1. [element], 2. [element], 3. [element]"
+    #                         )
+    #                     },
+    #                     {
+    #                         "type": "image_url",
+    #                         "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}
+    #                     }
+    #                 ]
+    #             }
+    #         ],
+    #     )
+
+    #     # Extract and parse the response
+    #     response_content = completion.choices[0].message.content
+    #     return parse_model_output(response_content)
+        
+
+    global md_client
+    if not md_client:
+        print("MoonDream client not available, using fallback")
         return {"1": "building", "2": "tree", "3": "sky"}
 
     try:
@@ -199,33 +249,13 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
         image_b64 = base64.b64encode(image_data).decode('utf-8')
         
         # Make API call to vision model
-        completion = hf_client.chat.completions.create(
-            model="Qwen/Qwen2.5-VL-32B-Instruct",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": (
-                                "List three different elements of this image in order "
-                                "of distance from the viewer. Format as: "
-                                "1. [element], 2. [element], 3. [element]"
-                            )
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}
-                        }
-                    ]
-                }
-            ],
-        )
+        response_content = md_client.query(f"data:image/jpeg;base64,{image_b64}", (
+                                "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
+                            ))['answer']
 
-        # Extract and parse the response
-        response_content = completion.choices[0].message.content
+        # Parse the response
         return parse_model_output(response_content)
-        
+
     except Exception as e:
         print(f"Error analyzing image: {e}")
         # Return fallback elements on error
