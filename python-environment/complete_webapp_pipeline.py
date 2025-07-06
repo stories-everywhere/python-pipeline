@@ -19,16 +19,19 @@ import uvicorn
 from pydantic import BaseModel
 import aiohttp
 
-from huggingface_hub import InferenceClient
+# from huggingface_hub import InferenceClient
 import fal_client
 import moondream as md
+from openai import OpenAI
+
 
 # Global variables for API clients
 openai_client = None
-hf_client = None
+# hf_client = None
 elevenlabs_headers = None
 fal_client_instance = None
 md_client = None
+
 
 class StoryRequest(BaseModel):
     """Request model for story generation parameters."""
@@ -50,24 +53,29 @@ async def lifespan(app: FastAPI):
     Initializes API clients on startup and handles cleanup on shutdown.
     """
     # Startup - Initialize API clients
-    global openai_client, hf_client, elevenlabs_headers, fal_client_instance, md_client
+    global openai_client, elevenlabs_headers, fal_client_instance, md_client # hf_client,
     try:
         # Initialize OpenAI client (currently commented out)
         # import openai
-        # openai_api_key = os.getenv("OPENAI_API_KEY")
+        sambanova_api_key = os.getenv("SAMBANOVA_API_KEY")
         # if not openai_api_key:
         #     raise ValueError("OPENAI_API_KEY environment variable not set")
         # openai_client = openai.OpenAI(api_key=openai_api_key)
+
+        openai_client = OpenAI(
+            api_key=sambanova_api_key,
+            base_url="https://api.sambanova.ai/v1",
+        )
         
         # Initialize Hugging Face client for text generation and image analysis
-        hf_api_key = os.getenv("HUGGINGFACE_API_KEY")
-        if not hf_api_key:
-            raise ValueError("HUGGINGFACE_API_KEY environment variable not set")
+        # hf_api_key = os.getenv("HUGGINGFACE_API_KEY")
+        # if not hf_api_key:
+        #     raise ValueError("HUGGINGFACE_API_KEY environment variable not set")
         
-        hf_client = InferenceClient(
-            provider="auto",
-            api_key=hf_api_key,
-        )
+        # hf_client = InferenceClient(
+        #     provider="auto",
+        #     api_key=hf_api_key,
+        # )
 
         # Verify FAL API key is set (fal_client handles the key automatically)
         fal_api_key = os.getenv("FAL_KEY")
@@ -271,30 +279,61 @@ async def generate_story_with_api(prompt: str) -> str:
     Returns:
         Generated story text
     """
-    global hf_client
+    # global hf_client
     
-    if not hf_client:
-        print("Hugging Face client not available, using fallback")
+    # if not hf_client:
+    #     print("Hugging Face client not available, using fallback")
+    #     return (
+    #         "In the misty town of Langate today, residents report unusual "
+    #         "occurrences involving local wildlife and mysterious structures. "
+    #         "The mayor assures everyone this is perfectly normal for a Tuesday."
+    #     )
+        
+
+        
+    # try:
+    #     # Generate story using chat completion API
+    #     completion = hf_client.chat.completions.create(
+    #         model="deepseek-ai/DeepSeek-V3-0324",
+    #         messages=[
+    #             {
+    #                 "role": "user",
+    #                 "content": prompt
+    #             }
+    #         ],
+    #     )
+        
+
+    #     # Extract the generated content
+    #     return completion.choices[0].message.content
+
+    global openai_client
+    if not openai_client:
+        print("Open Ai [sambanova] client not available, using fallback")
         return (
             "In the misty town of Langate today, residents report unusual "
             "occurrences involving local wildlife and mysterious structures. "
             "The mayor assures everyone this is perfectly normal for a Tuesday."
         )
-        
+    
     try:
-        # Generate story using chat completion API
-        completion = hf_client.chat.completions.create(
-            model="deepseek-ai/DeepSeek-V3-0324",
+        response = openai_client.chat.completions.create(
+            model="DeepSeek-V3-0324",
             messages=[
+                # {
+                #     "role":"system",
+                #     "content":"You are a helpful assistant"
+                # },
                 {
-                    "role": "user",
-                    "content": prompt
+                    "role":"user",
+                    "content":prompt
                 }
             ],
+            temperature=0.1,
+            top_p=0.1
         )
 
-        # Extract the generated content
-        return completion.choices[0].message.content
+        return response.choices[0].message.content
     
     except Exception as e:
         print(f"Error generating story: {e}")
@@ -328,9 +367,9 @@ async def generate_audio_with_api(text: str, voice: str) -> List[bytes]:
             },
         )
 
-        # Monitor the processing with logs
-        async for event in handler.iter_events(with_logs=True):
-            print(f"TTS Event: {event}")
+        # Monitor the processing with logs (commented for too many logs)
+        # async for event in handler.iter_events(with_logs=True):
+            # print(f"TTS Event: {event}")
             
         # Get the final result
         result = await handler.get()
