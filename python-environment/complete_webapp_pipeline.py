@@ -60,14 +60,14 @@ async def lifespan(app: FastAPI):
         # openai_client = openai.OpenAI(api_key=openai_api_key)
         
         # Initialize Hugging Face client for text generation and image analysis
-        # hf_api_key = os.getenv("HUGGINGFACE_API_KEY")
-        # if not hf_api_key:
-        #     raise ValueError("HUGGINGFACE_API_KEY environment variable not set")
+        hf_api_key = os.getenv("HUGGINGFACE_API_KEY")
+        if not hf_api_key:
+            raise ValueError("HUGGINGFACE_API_KEY environment variable not set")
         
-        # hf_client = InferenceClient(
-        #     provider="auto",
-        #     api_key=hf_api_key,
-        # )
+        hf_client = InferenceClient(
+            provider="auto",
+            api_key=hf_api_key,
+        )
 
         # Verify FAL API key is set (fal_client handles the key automatically)
         fal_api_key = os.getenv("FAL_KEY")
