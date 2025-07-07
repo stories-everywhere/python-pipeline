@@ -254,13 +254,15 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
 
     try:
         # Convert image to base64 for API transmission
-        image_b64 = base64.b64encode(image_data).decode('utf-8')
+        # image_b64 = base64.b64encode(image_data).decode('utf-8')
         
         # Make API call to vision model
-        response_content = md_client.query(f"data:image/jpeg;base64,{image_b64}", (
-                                "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
-                            ))['answer']
+        # response_content = md_client.query(f"data:image/jpeg;base64,{image_b64}", (
+                            #     "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
+                            # ))['answer']
 
+        response = md_client.query(image_data , "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]")
+        response_content = response['answer']
         # Parse the response
         return parse_model_output(response_content)
 
