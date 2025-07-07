@@ -215,30 +215,69 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
         return {"1": "building", "2": "tree", "3": "sky"}
 
     try:
+        print(f"Received image data: {len(image_data)} bytes")
+        print(f"First 20 bytes: {image_data[:20]}")
+        
         # Convert raw bytes to PIL Image first
         image = Image.open(io.BytesIO(image_data))
+        print(f"PIL Image opened successfully: {image.format}, {image.mode}, {image.size}")
         
         # Convert to RGB if needed (handles RGBA, grayscale, etc.)
         if image.mode != 'RGB':
+            print(f"Converting from {image.mode} to RGB")
             image = image.convert('RGB')
         
         # Convert PIL Image to JPEG bytes
         img_buffer = io.BytesIO()
         image.save(img_buffer, format='JPEG', quality=85)
         jpeg_bytes = img_buffer.getvalue()
+        print(f"Converted to JPEG: {len(jpeg_bytes)} bytes")
         
-        # Make API call to vision model with properly formatted JPEG
-        response = md_client.query(
-            jpeg_bytes, 
-            "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
-        )
-        response_content = response['answer']
-        
-        # Parse the response
-        return parse_model_output(response_content)
+        # Try different approaches based on MoonDream API expectations
+        # Approach 1: Direct bytes
+        try:
+            print("Trying direct JPEG bytes...")
+            response = md_client.query(
+                jpeg_bytes, 
+                "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
+            )
+            response_content = response['answer']
+            print(f"Success with direct bytes: {response_content}")
+            return parse_model_output(response_content)
+        except Exception as e1:
+            print(f"Direct bytes failed: {e1}")
+            
+        # Approach 2: Base64 encoded
+        try:
+            print("Trying base64 encoded...")
+            image_b64 = base64.b64encode(jpeg_bytes).decode('utf-8')
+            response = md_client.query(
+                f"data:image/jpeg;base64,{image_b64}", 
+                "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
+            )
+            response_content = response['answer']
+            print(f"Success with base64: {response_content}")
+            return parse_model_output(response_content)
+        except Exception as e2:
+            print(f"Base64 failed: {e2}")
+            
+        # Approach 3: PIL Image object directly
+        try:
+            print("Trying PIL Image object...")
+            response = md_client.query(
+                image, 
+                "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
+            )
+            response_content = response['answer']
+            print(f"Success with PIL Image: {response_content}")
+            return parse_model_output(response_content)
+        except Exception as e3:
+            print(f"PIL Image failed: {e3}")
 
     except Exception as e:
         print(f"Error analyzing image: {e}")
+        import traceback
+        traceback.print_exc()
         # Return fallback elements on error
         return {"1": "building", "2": "tree", "3": "sky"}
 
@@ -436,18 +475,6 @@ async def generate_story_from_image(
         if len(image_data) > 10 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="Image too large (max 10MB)")
         
-        # Remove this entire image processing block since it's now handled in analyze_image_with_api
-        # try:
-        #     image = Image.open(io.BytesIO(image_data))
-        #     image = image.resize(
-        #         (image.width // 4, image.height // 4), 
-        #         Image.LANCZOS
-        #     )
-        # except Exception as e:
-        #     raise HTTPException(
-        #         status_code=400, 
-        #         detail=f"Invalid image format: {str(e)}"
-        #     )
         
         # Analyze image to extract elements
         photo_elements = await analyze_image_with_api(image_data)
