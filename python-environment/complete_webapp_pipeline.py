@@ -201,7 +201,7 @@ def clean_text(text: str) -> str:
 
 async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
     """
-    Analyze an image using Hugging Face Vision API to identify elements.
+    Analyze an image using MoonDream API to identify elements.
     
     Args:
         image_data: Raw image bytes
@@ -209,60 +209,31 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
     Returns:
         Dictionary of identified image elements
     """
-    # global hf_client
-    # if not hf_client:
-    #     print("HF client not available, using fallback")
-    #     return {"1": "building", "2": "tree", "3": "sky"}
-
-    # try:
-    #     # Convert image to base64 for API transmission
-    #     image_b64 = base64.b64encode(image_data).decode('utf-8')
-        
-    #     # Make API call to vision model
-    #     completion = hf_client.chat.completions.create(
-    #         model="Qwen/Qwen2.5-VL-32B-Instruct",
-    #         messages=[
-    #             {
-    #                 "role": "user",
-    #                 "content": [
-    #                     {
-    #                         "type": "text",
-    #                         "text": (
-    #                             "List three different elements of this image in order "
-    #                             "of distance from the viewer. Format as: "
-    #                             "1. [element], 2. [element], 3. [element]"
-    #                         )
-    #                     },
-    #                     {
-    #                         "type": "image_url",
-    #                         "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}
-    #                     }
-    #                 ]
-    #             }
-    #         ],
-    #     )
-
-    #     # Extract and parse the response
-    #     response_content = completion.choices[0].message.content
-    #     return parse_model_output(response_content)
-        
-
     global md_client
     if not md_client:
         print("MoonDream client not available, using fallback")
         return {"1": "building", "2": "tree", "3": "sky"}
 
     try:
-        # Convert image to base64 for API transmission
-        # image_b64 = base64.b64encode(image_data).decode('utf-8')
+        # Convert raw bytes to PIL Image first
+        image = Image.open(io.BytesIO(image_data))
         
-        # Make API call to vision model
-        # response_content = md_client.query(f"data:image/jpeg;base64,{image_b64}", (
-                            #     "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
-                            # ))['answer']
-
-        response = md_client.query(image_data , "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]")
+        # Convert to RGB if needed (handles RGBA, grayscale, etc.)
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        
+        # Convert PIL Image to JPEG bytes
+        img_buffer = io.BytesIO()
+        image.save(img_buffer, format='JPEG', quality=85)
+        jpeg_bytes = img_buffer.getvalue()
+        
+        # Make API call to vision model with properly formatted JPEG
+        response = md_client.query(
+            jpeg_bytes, 
+            "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
+        )
         response_content = response['answer']
+        
         # Parse the response
         return parse_model_output(response_content)
 
@@ -451,18 +422,6 @@ async def generate_story_from_image(
     length: int = 200,
     voice: str = "af_heart"
 ):
-    """
-    Generate a Langate story from an uploaded image.
-    
-    Args:
-        file: Uploaded image file
-        weather: Weather condition for the story setting
-        length: Desired story length in words
-        voice: Voice identifier for TTS (currently unused)
-        
-    Returns:
-        StoryResponse containing generated story, audio, and metadata
-    """
     start_time = datetime.now()
     
     try:
@@ -477,49 +436,43 @@ async def generate_story_from_image(
         if len(image_data) > 10 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="Image too large (max 10MB)")
         
-        # Process and resize image for efficiency
-        try:
-            image = Image.open(io.BytesIO(image_data))
-            # Resize to 1/4 size for faster processing
-            image = image.resize(
-                (image.width // 4, image.height // 4), 
-                Image.LANCZOS
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Invalid image format: {str(e)}"
-            )
+        # Remove this entire image processing block since it's now handled in analyze_image_with_api
+        # try:
+        #     image = Image.open(io.BytesIO(image_data))
+        #     image = image.resize(
+        #         (image.width // 4, image.height // 4), 
+        #         Image.LANCZOS
+        #     )
+        # except Exception as e:
+        #     raise HTTPException(
+        #         status_code=400, 
+        #         detail=f"Invalid image format: {str(e)}"
+        #     )
         
         # Analyze image to extract elements
         photo_elements = await analyze_image_with_api(image_data)
         
-        # Generate event and story
+        # Rest of your code remains the same...
         event = generate_event(photo_elements)
         prompt = generate_prompt(event, weather, datetime.now(), length)
         
-        # Generate story text
         story_text = await generate_story_with_api(prompt)
         clean_story = clean_text(story_text)
         
-        # Generate audio from story text
         audio_bytes_list = await generate_audio_with_api(clean_story, voice)
         
-        # Convert audio to base64 for JSON response
         audio_files_b64 = []
         for i, audio_bytes in enumerate(audio_bytes_list):
-            if audio_bytes:  # Only process non-empty audio
+            if audio_bytes:
                 audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
                 audio_files_b64.append(audio_b64)
         
-        # Ensure we have at least one audio file (fallback if needed)
         if not audio_files_b64:
             fallback_audio = create_fallback_audio()
             if fallback_audio:
                 audio_b64 = base64.b64encode(fallback_audio).decode('utf-8')
                 audio_files_b64.append(audio_b64)
         
-        # Calculate total processing time
         end_time = datetime.now()
         processing_time = str(end_time - start_time)
         
@@ -531,7 +484,6 @@ async def generate_story_from_image(
         )
         
     except HTTPException:
-        # Re-raise HTTP exceptions as-is
         raise
     except Exception as e:
         print(f"Unexpected error in generate_story_from_image: {e}")
