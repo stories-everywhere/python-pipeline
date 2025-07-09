@@ -174,15 +174,14 @@ def generate_prompt(event: str, weather: str, calendar: datetime, length: int) -
         Formatted prompt string for the AI model
     """
     dynamic_prompt = (
-        f"Setting: Langate, {calendar.month}/{calendar.day}, {weather}. "
+        # f"Setting: Langate, {calendar.month}/{calendar.day}, {weather}. "
         f"Event: {event}. Create a {length}-word real-time report on this event. "
     )
     
     base_prompt = """
-        Create a story in present tense like it's being told by a radio community 
-        announcement host who's in the town of Langate. Act calm, and largely 
-        unbothered by supernatural happenings. Report in present tense on today's 
-        {}/{} terrifying or absurd events in a dry, eerie tone laced with dark humor.
+        Create a transcript to be read by a text-to-speech model (keep the output raw text no asterix or brackets and nothing outside of what the voice should say) in present tense like it's being told by a radio community announcement host who's in the town of Langate. 
+        Act calm, and largely unbothered by supernatural happenings. 
+        Report in present tense on today's {}/{} terrifying or absurd events in a dry, eerie tone laced with dark humor.
     """.format(calendar.month, calendar.day)
     
     return f"{base_prompt.strip()}{dynamic_prompt}"

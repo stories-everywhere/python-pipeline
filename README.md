@@ -7,6 +7,45 @@ Using a series of ML models to create stories from real-time inputs like:
 - weather
 - date
 
+# Pipeline Real Example 
+### Visual Question Answering (VQA) model
+model: [api.moondream.ai/v1/query](https://moondream.ai/c/docs/advanced/api/query)
+
+prompt: "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
+
+result: "1. **keyboard**, 2. screen, 3. laptop"
+
+### Event Generator
+
+structure: A [random subject] [random verb] a [random adjective] [random photo element].
+
+result: "A major solves a vibrant **keyboard**."
+
+### Large Language Model (LLM)
+
+model: [deepseek-ai/DeepSeek-V3-0324](https://huggingface.co/deepseek-ai/DeepSeek-V3-0324)
+
+prompt: "Create a transcript to be read by a text-to-speech model (keep the output raw text no asterix or brackets and nothing outside of what the voice should say) in present tense like it's being told by a radio community announcement host who's in the town of Langate. Act calm, and largely unbothered by supernatural happenings. Report in present tense on today's 8/7 terrifying or absurd events in a dry, eerie tone laced with dark humor. **Event: A major solves a vibrant keyboard.** Create a 200-word real-time report on this event."
+
+result: " Good evening, Langate. It’s another strange one today. Over on Elm Street, Major Harold Briggs—yes, the retired one who always complains about the pigeons—has just solved a vibrant keyboard. No, we don’t know what that means either.  
+
+Witnesses say the keyboard appeared this morning, glowing neon pink and humming like a swarm of bees. The keys shifted colors at random, and anyone who touched it immediately forgot their own name for about three minutes. Major Briggs, ever the pragmatist, just sighed, rolled up his sleeves, and started typing.  
+
+By noon, he’d somehow "solved" it. The keyboard let out a sound like a dying accordion and turned into a pile of warm, slightly sticky pebbles. The Major just wiped his hands on his trousers and muttered something about "bloody modern technology" before walking off to feed his cats.  
+
+Local experts—if you can call Old Man Jenkins an expert—say this is the third enchanted object to show up this month. The town council’s official stance is "don’t touch the weird things," but let’s be honest, that’s never stopped anyone.  
+
+Stay cautious, Langate. Or don’t. At this point, it’s really just a matter of time before something weirder happens. Tune in tomorrow. Same eerie channel."
+
+
+### Text-To-Speech (TTS) Model
+
+model: [fal-ai/chatterbox/text-to-speech](https://fal.ai/models/fal-ai/chatterbox/text-to-speech)
+
+voice: [link to voice chosen from Mozilla'a commonvoicedataset ](https://v3.fal.media/files/elephant/wLS77pG8fFjdqybPlKp3g_1-common_voice_en_39613299.mp3)
+
+result: ![music](assets/audio-1.wav) *(shortened for brevity)*
+
 # Event generator
 ### goals:
 - aid model's consistency choosing from set characters
