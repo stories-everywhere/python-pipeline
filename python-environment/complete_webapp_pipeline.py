@@ -198,6 +198,86 @@ def clean_text(text: str) -> str:
     """
     return ' '.join(line.strip() for line in text.splitlines() if line.strip())
 
+def split_text_into_blocks(text, max_length=500):
+    """
+    Split text into blocks of maximum specified length, with intelligent punctuation-based cutting.
+    
+    Args:
+        text (str): The input text to split
+        max_length (int): Maximum length of each block (default: 500)
+    
+    Returns:
+        list: List of text blocks, each ending with punctuation or cut at max length
+        
+    The function tries to cut at punctuation marks in this order:
+    1. Full stop (.)
+    2. Semicolon (;)
+    3. Comma (,)
+    4. Colon (:)
+    5. If none found, cuts at max length
+    """
+    if not text:
+        return []
+    
+    blocks = []
+    current_pos = 0
+    
+    while current_pos < len(text):
+        # Find the end position for this block
+        end_pos = min(current_pos + max_length, len(text))
+        
+        # If we've reached the end of the text, take the remaining part
+        if end_pos >= len(text):
+            remaining_text = text[current_pos:].strip()
+            if remaining_text:
+                blocks.append(remaining_text)
+            break
+        
+        # Look for the best cut point within the max length
+        block_text = text[current_pos:end_pos]
+        
+        # Try to find punctuation marks in order of preference
+        cut_pos = -1
+        cut_char = None
+        
+        # First try full stop
+        last_period_pos = block_text.rfind('.')
+        if last_period_pos != -1:
+            cut_pos = last_period_pos
+            cut_char = '.'
+        else:
+            # Try semicolon
+            last_semicolon_pos = block_text.rfind(';')
+            if last_semicolon_pos != -1:
+                cut_pos = last_semicolon_pos
+                cut_char = ';'
+            else:
+                # Try comma
+                last_comma_pos = block_text.rfind(',')
+                if last_comma_pos != -1:
+                    cut_pos = last_comma_pos
+                    cut_char = ','
+                else:
+                    # Try colon
+                    last_colon_pos = block_text.rfind(':')
+                    if last_colon_pos != -1:
+                        cut_pos = last_colon_pos
+                        cut_char = ':'
+        
+        if cut_pos != -1:
+            # Found a suitable punctuation mark
+            actual_end_pos = current_pos + cut_pos + 1
+            block_text = text[current_pos:actual_end_pos]
+            blocks.append(block_text.strip())
+            current_pos = actual_end_pos
+        else:
+            # No suitable punctuation found, cut at max length
+            block_text = text[current_pos:end_pos]
+            blocks.append(block_text.strip())
+            current_pos = end_pos
+    
+    return blocks
+
 async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
     """
     Analyze an image using MoonDream API to identify elements.
@@ -290,33 +370,6 @@ async def generate_story_with_api(prompt: str) -> str:
     Returns:
         Generated story text
     """
-    # global hf_client
-    
-    # if not hf_client:
-    #     print("Hugging Face client not available, using fallback")
-    #     return (
-    #         "In the misty town of Langate today, residents report unusual "
-    #         "occurrences involving local wildlife and mysterious structures. "
-    #         "The mayor assures everyone this is perfectly normal for a Tuesday."
-    #     )
-        
-
-        
-    # try:
-    #     # Generate story using chat completion API
-    #     completion = hf_client.chat.completions.create(
-    #         model="deepseek-ai/DeepSeek-V3-0324",
-    #         messages=[
-    #             {
-    #                 "role": "user",
-    #                 "content": prompt
-    #             }
-    #         ],
-    #     )
-        
-
-    #     # Extract the generated content
-    #     return completion.choices[0].message.content
 
     global openai_client
     if not openai_client:
@@ -354,58 +407,91 @@ async def generate_story_with_api(prompt: str) -> str:
             "The mayor assures everyone this is perfectly normal for a Tuesday."
         )
 
-async def generate_audio_with_api(text: str, voice: str) -> List[bytes]:
+async def generate_audio_with_api(text_blocks: List[str], voice: str) -> List[bytes]:
     """
-    Generate audio from text using FAL AI text-to-speech API.
+    Generate audio from text blocks using FAL AI text-to-speech API.
     
     Args:
-        text: Text to convert to speech
+        text_blocks: List of text blocks to convert to speech
         voice: Voice identifier (currently unused)
         
     Returns:
-        List of audio bytes
+        List of audio bytes (one for each text block)
     """
-    try:
-        # Submit async request to FAL AI TTS service
-        handler = await fal_client.submit_async(
-            "fal-ai/chatterbox/text-to-speech",
-            arguments={
-                "audio_url": "https://v3.fal.media/files/elephant/wLS77pG8fFjdqybPlKp3g_1-common_voice_en_39613299.mp3",
-                "exaggeration": 0.3,
-                "temperature": 0.7,
-                "cfg": 0.5,
-                "text": text
-            },
-        )
-
-        # Monitor the processing with logs (commented for too many logs)
-        # async for event in handler.iter_events(with_logs=True):
-            # print(f"TTS Event: {event}")
-            
-        # Get the final result
-        result = await handler.get()
+    audio_results = []
+    
+    for i, text_block in enumerate(text_blocks):
+        print(f"Processing block {i+1}/{len(text_blocks)}: {len(text_block)} chars")
         
-        # Extract audio URL from the FAL API response
-        # Response format: {"audio": {"url": "...", "content_type": "...", ...}}
-        if "audio" in result and "url" in result["audio"]:
-            audio_url = result["audio"]["url"]
-            print(f"Generated audio URL: {audio_url}")
+        try:
+            # Submit async request to FAL AI TTS service
+            handler = await fal_client.submit_async(
+                "fal-ai/chatterbox/text-to-speech",
+                arguments={
+                    "audio_url": "https://v3.fal.media/files/elephant/wLS77pG8fFjdqybPlKp3g_1-common_voice_en_39613299.mp3",
+                    "exaggeration": 0.3,
+                    "temperature": 0.7,
+                    "cfg": 0.5,
+                    "text": text_block
+                },
+            )
+
+            # Monitor the processing with logs (commented for too many logs)
+            # async for event in handler.iter_events(with_logs=True):
+                # print(f"TTS Event: {event}")
+                
+            # Get the final result
+            result = await handler.get()
             
-            # Fetch the audio file from the URL
-            audio_bytes = await fetch_audio_from_url(audio_url)
-            
-            if audio_bytes:
-                return [audio_bytes]
+            # Extract audio URL from the FAL API response
+            # Response format: {"audio": {"url": "...", "content_type": "...", ...}}
+            if "audio" in result and "url" in result["audio"]:
+                audio_url = result["audio"]["url"]
+                print(f"Generated audio URL for block {i+1}: {audio_url}")
+                
+                # Fetch the audio file from the URL
+                audio_bytes = await fetch_audio_from_url(audio_url)
+                
+                if audio_bytes:
+                    audio_results.append(audio_bytes)
+                else:
+                    print(f"Failed to fetch audio from URL for block {i+1}, using fallback")
+                    audio_results.append(create_fallback_audio())
             else:
-                print("Failed to fetch audio from URL, using fallback")
-                return [create_fallback_audio()]
-        else:
-            print("No audio URL found in FAL API response, using fallback")
-            return [create_fallback_audio()]
-             
-    except Exception as e:
-        print(f"Error generating audio: {e}")
-        return [create_fallback_audio()]
+                print(f"No audio URL found in FAL API response for block {i+1}, using fallback")
+                audio_results.append(create_fallback_audio())
+                 
+        except Exception as e:
+            print(f"Error generating audio for block {i+1}: {e}")
+            audio_results.append(create_fallback_audio())
+    
+    return audio_results
+
+
+# Helper function to use the text splitter with audio generation
+async def generate_audio_from_text(text: str, voice: str , max_block_length: int = 500) -> List[bytes]:
+    """
+    Split text into blocks and generate audio for each block.
+    
+    Args:
+        text: Text to convert to speech
+        voice: Voice identifier
+        max_block_length: Maximum length of each text block
+        
+    Returns:
+        List of audio bytes (one for each text block)
+    """
+    # Split text into blocks
+    text_blocks = split_text_into_blocks(text, max_block_length)
+    
+    if not text_blocks:
+        print("No text blocks to process")
+        return []
+    
+    print(f"Split text into {len(text_blocks)} blocks")
+    
+    # Generate audio for each block
+    return await generate_audio_with_api(text_blocks, voice)
 
 def create_fallback_audio() -> bytes:
     """
@@ -485,7 +571,7 @@ async def generate_story_from_image(
         story_text = await generate_story_with_api(prompt)
         clean_story = clean_text(story_text)
         
-        audio_bytes_list = await generate_audio_with_api(clean_story, voice)
+        audio_bytes_list = await generate_audio_from_text(clean_story, voice)
         
         audio_files_b64 = []
         for i, audio_bytes in enumerate(audio_bytes_list):
