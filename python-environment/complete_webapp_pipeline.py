@@ -144,21 +144,38 @@ def generate_event(photo_elements: Dict[str, str]) -> str:
     """
     subjects = [
         "Strange amphibian", "major", "not so secret disposal company", 
-        "crazy duck", "very normal alien"
+        "crazy duck", "very normal alien", 
+        "quantum cat", "sentient vending machine", 
+        "robot barista", "suspicious librarian", 
+        "moon janitor", "bio-luminescent intern", 
+        "tiny chaos deity", "grumpy cloud", "escaped simulation"
     ]
+
     verbs = [
         "jumps over", "solves", "paints", "explores", 
-        "repairs", "builds", "eats", "boils"
+        "repairs", "builds", "eats", "boils", 
+        "teleports", "invents", "whispers to", "disguises as", 
+        "encrypts", "deconstructs", "haunts", "accidentally befriends", 
+        "trades with", "measures", "reverses", "downloads from", 
+        "conducts", "maps", "photocopies", "upgrades"
     ]
+
     adjectives = [
         "lazy", "mysterious", "vibrant", "ancient", 
-        "futuristic", "dark"
+        "futuristic", "noisy", "invisible", 
+        "radioactive", "cursed", "electric", "sticky", 
+        "floating", "bored", "recycled", "unstable", 
+        "delusional", "glowing"
     ]
+
     
-    # Select a random element from the photo or use default
-    element = random.choice(list(photo_elements.values())) if photo_elements else "object"
+    # # Select a random element from the photo or use default
+    # element = random.choice(list(photo_elements.values())) if photo_elements else "object"
     
-    return f"A {random.choice(subjects)} {random.choice(verbs)} a {random.choice(adjectives)} {element}."
+    # return f"A {random.choice(subjects)} {random.choice(verbs)} a {random.choice(adjectives)} {element}."
+
+    #include all elemts in the event    
+    return f"The {random.choice(subjects)} {random.choice(verbs)}  {random.choice(adjectives)} {photo_elements[1]}, {photo_elements[2]} and {photo_elements[3]}."
 
 def generate_prompt(event: str, weather: str, calendar: datetime, length: int) -> str:
     """
@@ -350,6 +367,7 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
             response_content = response['answer']
             print(f"Success with PIL Image: {response_content}")
             return parse_model_output(response_content)
+
         except Exception as e3:
             print(f"PIL Image failed: {e3}")
 
@@ -381,18 +399,37 @@ async def generate_story_with_api(prompt: str) -> str:
         )
     
     try:
+       
+        # deepSeek call
+        # response = openai_client.chat.completions.create(
+        #     model="DeepSeek-V3-0324",
+        #     messages=[
+        #         # {
+        #         #     "role":"system",
+        #         #     "content":"You are a helpful assistant"
+        #         # },
+        #         {
+        #             "role":"user",
+        #             "content":prompt
+        #         }
+        #     ],
+        #     temperature=0.1,
+        #     top_p=0.1
+        # )
+
+        #llama call
         response = openai_client.chat.completions.create(
-            model="DeepSeek-V3-0324",
-            messages=[
-                # {
-                #     "role":"system",
-                #     "content":"You are a helpful assistant"
-                # },
-                {
-                    "role":"user",
-                    "content":prompt
-                }
-            ],
+            model="Meta-Llama-3.1-8B-Instruct",
+            messages=[{
+                "role":"system",
+                "content":"You are a radio announcement host in the middle of your day, "
+                "you speek on incoming events saying at which hour they are happening, "
+                "once you are done you cue to the next event you are going to speek on"
+                },
+            {
+                "role":"user",
+                "content":prompt
+                }],
             temperature=0.1,
             top_p=0.1
         )
@@ -567,7 +604,8 @@ async def generate_story_from_image(
         # Rest of your code remains the same...
         event = generate_event(photo_elements)
         prompt = generate_prompt(event, weather, datetime.now(), length)
-        
+         print(f"Prompt: {prompt}")
+
         story_text = await generate_story_with_api(prompt)
         clean_story = clean_text(story_text)
         
