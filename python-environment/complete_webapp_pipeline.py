@@ -175,7 +175,7 @@ def generate_event(photo_elements: Dict[str, str]) -> str:
     # return f"A {random.choice(subjects)} {random.choice(verbs)} a {random.choice(adjectives)} {element}."
 
     #include all elemts in the event    
-    return f"The {random.choice(subjects)} {random.choice(verbs)}  {random.choice(adjectives)} {photo_elements[1]}, {photo_elements[2]} and {photo_elements[3]}."
+    return f"The {random.choice(subjects)} {random.choice(verbs)}  {random.choice(adjectives)} {photo_elements["1"]}, {photo_elements["2"]} and {photo_elements["3"]}."
 
 def generate_prompt(event: str, weather: str, calendar: datetime, length: int) -> str:
     """
