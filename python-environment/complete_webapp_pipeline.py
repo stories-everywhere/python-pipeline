@@ -604,7 +604,7 @@ async def generate_story_from_image(
         # Rest of your code remains the same...
         event = generate_event(photo_elements)
         prompt = generate_prompt(event, weather, datetime.now(), length)
-         print(f"Prompt: {prompt}")
+        print(f"Prompt: {prompt}")
 
         story_text = await generate_story_with_api(prompt)
         clean_story = clean_text(story_text)
