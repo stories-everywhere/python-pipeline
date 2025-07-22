@@ -175,7 +175,7 @@ def generate_event(photo_elements: Dict[str, str]) -> str:
     # return f"A {random.choice(subjects)} {random.choice(verbs)} a {random.choice(adjectives)} {element}."
 
     #include all elemts in the event    
-    return f"The {random.choice(subjects)} {random.choice(verbs)}  {random.choice(adjectives)} {photo_elements["1"]}, {photo_elements["2"]} and {photo_elements["3"]}."
+    return f"The {random.choice(subjects)} {random.choice(verbs)}  {random.choice(adjectives)} {photo_elements['1']}, {photo_elements['2']} and {photo_elements['3']}."
 
 def generate_prompt(event: str, weather: str, calendar: datetime, length: int) -> str:
     """
@@ -198,8 +198,8 @@ def generate_prompt(event: str, weather: str, calendar: datetime, length: int) -
     base_prompt = """
         Create a transcript to be read by a text-to-speech model (keep the output raw text no asterix or brackets and nothing outside of what the voice should say) in present tense like it's being told by a radio community announcement host who's in the town of Langate. 
         Act calm, and largely unbothered by supernatural happenings. 
-        Report in present tense on today's {}/{} terrifying or absurd events in a dry, eerie tone laced with dark humor.
-    """.format(calendar.month, calendar.day)
+        Report in present tense on  {}/{} terrifying or absurd events in a dry, eerie tone laced with dark humor.
+    """.format(calendar.hour, calendar.minute)
     
     return f"{base_prompt.strip()}{dynamic_prompt}"
 
