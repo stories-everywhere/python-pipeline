@@ -174,8 +174,24 @@ def generate_event(photo_elements: Dict[str, str]) -> str:
     
     # return f"A {random.choice(subjects)} {random.choice(verbs)} a {random.choice(adjectives)} {element}."
 
-    #include all elemts in the event    
-    return f"The {random.choice(subjects)} {random.choice(verbs)}  {random.choice(adjectives)} {photo_elements['1']}, {photo_elements['2']} and {photo_elements['3']}."
+    #include all elements in the event    
+    elements = list(photo_elements.values())
+
+    if not elements:
+        return "No recognizable elements were found in the image."
+
+    if len(elements) == 1:
+        description = elements[0]
+    elif len(elements) == 2:
+        description = f"{elements[0]} and {elements[1]}"
+    else:
+        description = ", ".join(elements[:-1]) + f", and {elements[-1]}"
+
+    return (
+        f"The {random.choice(subjects)} {random.choice(verbs)} "
+        f"{random.choice(adjectives)} {description}."
+    )
+    # return f"The {random.choice(subjects)} {random.choice(verbs)}  {random.choice(adjectives)} {photo_elements['1']}, {photo_elements['2']} and {photo_elements['3']}."
 
 def generate_prompt(event: str, weather: str, calendar: datetime, length: int) -> str:
     """
@@ -196,9 +212,11 @@ def generate_prompt(event: str, weather: str, calendar: datetime, length: int) -
     )
     
     base_prompt = """
-        Create a transcript to be read by a text-to-speech model (keep the output raw text no asterix or brackets and nothing outside of what the voice should say) in present tense like it's being told by a radio community announcement host who's in the town of Langate. 
+        Create a transcript to be read by a text-to-speech model 
+        (keep the output raw text no asterix or brackets and nothing outside of what the voice should say)
+        in present tense like it's being told by a radio community announcement host who's in the town of Langate. 
         Act calm, and largely unbothered by supernatural happenings. 
-        Report in present tense on  {}/{} terrifying or absurd events in a dry, eerie tone laced with dark humor.
+        Report in present tense at {}:{} terrifying or absurd events in a dry, eerie tone laced with dark humor.
     """.format(calendar.hour, calendar.minute)
     
     return f"{base_prompt.strip()}{dynamic_prompt}"
@@ -424,7 +442,7 @@ async def generate_story_with_api(prompt: str) -> str:
                 "role":"system",
                 "content":"You are a radio announcement host in the middle of your day, "
                 "you speek on incoming events saying at which hour they are happening, "
-                "once you are done you cue to the next event you are going to speek on"
+                "once you are done you act like you are waiting for the next event to be told to you"
                 },
             {
                 "role":"user",
