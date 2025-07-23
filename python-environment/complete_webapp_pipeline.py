@@ -214,7 +214,7 @@ def generate_prompt(event: str, weather: str, calendar: datetime, length: int) -
     base_prompt = """
         At {}:{} {}. 
         Create a {}-word  report on this event without restating the above sentence but including the hour. 
-    """.format(calendar.hour, calendar.minute, even, length)
+    """.format(calendar.hour, calendar.minute, event, length)
     
     return f"{base_prompt.strip()}"
 
