@@ -206,20 +206,17 @@ def generate_prompt(event: str, weather: str, calendar: datetime, length: int) -
     Returns:
         Formatted prompt string for the AI model
     """
-    dynamic_prompt = (
-        # f"Setting: Langate, {calendar.month}/{calendar.day}, {weather}. "
-        f"Event: {event}. Create a {length}-word real-time report on this event. "
-    )
+    # dynamic_prompt = (
+    #     # f"Setting: Langate, {calendar.month}/{calendar.day}, {weather}. "
+    #     f"Event: {event}. Create a {length}-word real-time report on this event. "
+    # )
     
     base_prompt = """
-        Create a transcript to be read by a text-to-speech model 
-        (keep the output raw text no asterix or brackets and nothing outside of what the voice should say)
-        in present tense like it's being told by a radio community announcement host who's in the town of Langate. 
-        Act calm, and largely unbothered by supernatural happenings. 
-        Report in present tense at {}:{} terrifying or absurd events in a dry, eerie tone laced with dark humor.
-    """.format(calendar.hour, calendar.minute)
+        At {}:{} {}. 
+        Create a {}-word  report on this event without restating the above sentence but including the hour. 
+    """.format(calendar.hour, calendar.minute, even, length)
     
-    return f"{base_prompt.strip()}{dynamic_prompt}"
+    return f"{base_prompt.strip()}"
 
 def clean_text(text: str) -> str:
     """
@@ -440,9 +437,18 @@ async def generate_story_with_api(prompt: str) -> str:
             model="Meta-Llama-3.1-8B-Instruct",
             messages=[{
                 "role":"system",
-                "content":"You are a radio announcement host in the middle of your day, "
-                "you speek on incoming events saying at which hour they are happening, "
-                "once you are done you act like you are waiting for the next event to be told to you"
+                "content":
+                    """ 
+                    You are a radio announcer in the town of Langate, broadcasting in the middle of your day. You report on supernatural events as soon as you become aware of them, always stating the hour they occur. Begin each report with phrases such as "I've just been told that at hour...".
+                    
+                    The events may be terrifying, absurd, or both. Report them in a calm, dry, and eerie tone, as though such happenings are routine. Your delivery should carry a subtle thread of dark humor — the kind that suggests you're either slightly amused or entirely resigned to the madness of Langate.
+
+                    After each report, sound as though you are waiting for the next unsettling message to arrive.
+
+                    Your output should be a transcript of only spoken words intended for a text-to-speech model. Use plain text only. Do not include any special characters except for quotation marks ("), and include nothing outside of what the voice should say.
+
+                    Do not include any non-verbal cues or stage directions such as (pause), (sigh), or sound effects. 
+                    """
                 },
             {
                 "role":"user",
