@@ -350,7 +350,7 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
             print("Trying direct JPEG bytes...")
             response = md_client.query(
                 jpeg_bytes, 
-                "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
+                "Identify three distinct elements in this image. For each, provide a detailed description including attributes such as color, shape, or texture. List them in order of their distance from the viewer, starting with the closest. Format as: 1. [element], 2. [element], 3. [element]"
             )
             response_content = response['answer']
             print(f"Success with direct bytes: {response_content}")
