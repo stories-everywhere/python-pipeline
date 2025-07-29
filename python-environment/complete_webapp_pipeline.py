@@ -200,7 +200,7 @@ def generate_event(photo_elements: Dict[str, str]) -> str:
         f"The {random.choice(subjects)} {random.choice(verbs)} "
         f"{description}."
     )
-    # return f"The {random.choice(subjects)} {random.choice(verbs)}  {random.choice(adjectives)} {photo_elements['1']}, {photo_elements['2']} and {photo_elements['3']}."
+    
 
 def generate_prompt(event: str, weather: str, date: str, length: int) -> str:
     """
@@ -222,7 +222,7 @@ def generate_prompt(event: str, weather: str, date: str, length: int) -> str:
     
     base_prompt = """
         At {} {}. 
-        Create a {}-word  report on this event without restating the above sentence but including the hour. 
+        Create a {}-word  report on this event without restating the above sentence but including the hour at some point in the narration. 
     """.format(date, event, length)
     
     return f"{base_prompt.strip()}"
@@ -448,31 +448,15 @@ async def generate_story_with_api(prompt: str) -> str:
                 "role":"system",
                 "content":
                     """ 
-                    You are a radio announcer in the town of Langate, broadcasting in the middle of your day. You report on supernatural events as soon as you become aware of them, always stating the hour they occur. Begin each report with phrases such as 
-                    "I've just been told that at hour...",
-                    "Breaking news from the studio",
-                    "This just in",
-                    "Word on the street is",
-                    "Our field reporter confirms",
-                    "Listen up folks",
-                    "You won't believe what happened",
-                    "Stop the presses",
-                    "Hot off the wire",
-                    "I'm getting reports that",
-                    "Sources are telling me",
-                    "Hold onto your hats",
-                    "In a shocking turn of events",
-                    "Ladies and gentlemen",
-                    "We've got exclusive footage of",
-                    "Eyewitnesses report",
-                    "Our investigation reveals",
-                    "I kid you not",.
+                    You are a radio announcer in the town of Langate, broadcasting in the middle of your day. You report on supernatural events as soon as you become aware of them, stating the hour they occur. 
+                    
+                    You will begin each report with phrases such as "I've just been told that at hour...", "Breaking news from the studio", "Word on the street is", "I'm looking at photos of", "Our cameras captured", "In an unprecedented event", "Traffic control reports".
                                 
                     The events may be terrifying, absurd, or both. Report them in a calm, dry, and eerie tone, as though such happenings are routine. Your delivery should carry a subtle thread of dark humor — the kind that suggests you're either slightly amused or entirely resigned to the madness of Langate.
 
-                    After each report, sound as though you are waiting for the next unsettling message to arrive.
+                    After each report, sound as though you are waiting for the next message to arrive.
 
-                    Your output should be a transcript of only spoken words intended for a text-to-speech model. Use plain text only. Do not include any special characters except for quotation marks ("), and include nothing outside of what the voice should say.
+                    Your output should be a transcript of only your spoken words intended for a text-to-speech model. Use plain text only. Do not include any special characters except for quotation marks ("), and include nothing outside of what the voice should say.
 
                     Do not include any non-verbal cues or stage directions such as (pause), (sigh), or sound effects. 
                     """
