@@ -170,13 +170,20 @@ def generate_event(photo_elements: Dict[str, str]) -> str:
     ]
 
     # Include all elements in the event    
-    elements = list(photo_elements.values())
+    raw_elements = list(photo_elements.values())
     
-    # Debug prints to see what we're working with
-    print(f"photo_elements: {photo_elements}")
-    print(f"elements: {elements}")
-    print(f"elements type: {type(elements)}")
-    print(f"first element type: {type(elements[0]) if elements else 'No elements'}")
+    # Extract actual element names from the malformed dictionary
+    elements = []
+    for item in raw_elements:
+        # Skip brackets and extract quoted strings
+        if item.strip().startswith('"') and item.strip().endswith('"'):
+            # Remove quotes and comma, clean up the string
+            clean_item = item.strip().strip(',').strip('"')
+            elements.append(clean_item)
+        elif item.strip().startswith('"') and ',' in item:
+            # Handle items like ' "Cardboard box",'
+            clean_item = item.strip().split('"')[1]
+            elements.append(clean_item)
 
     if not elements:
         return "No recognizable elements were found in the image."
