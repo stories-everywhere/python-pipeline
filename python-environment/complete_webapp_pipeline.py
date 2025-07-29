@@ -38,6 +38,7 @@ class StoryRequest(BaseModel):
     weather: str = "foggy"
     length: int = 200
     voice: str = "af_heart"
+    date: str  = "00:00"
 
 class StoryResponse(BaseModel):
     """Response model for generated story data."""
@@ -186,21 +187,21 @@ def generate_event(photo_elements: Dict[str, str]) -> str:
         description = f"{elements[0]} and {elements[1]}"
     else:
         description = ", ".join(elements[:-1]) + f", and {elements[-1]}"
-
+    # adjective of desccription has been erased to keep more of the real-life descriptors
     return (
         f"The {random.choice(subjects)} {random.choice(verbs)} "
-        f"{random.choice(adjectives)} {description}."
+        f" {description}."
     )
     # return f"The {random.choice(subjects)} {random.choice(verbs)}  {random.choice(adjectives)} {photo_elements['1']}, {photo_elements['2']} and {photo_elements['3']}."
 
-def generate_prompt(event: str, weather: str, calendar: datetime, length: int) -> str:
+def generate_prompt(event: str, weather: str, date: str, length: int) -> str:
     """
     Generate a prompt for story generation based on parameters.
     
     Args:
         event: The generated event description
         weather: Current weather condition
-        calendar: Current datetime
+        date: Current time
         length: Desired story length in words
         
     Returns:
@@ -212,9 +213,9 @@ def generate_prompt(event: str, weather: str, calendar: datetime, length: int) -
     # )
     
     base_prompt = """
-        At {}:{} {}. 
+        At {} {}. 
         Create a {}-word  report on this event without restating the above sentence but including the hour. 
-    """.format(calendar.hour, calendar.minute, event, length)
+    """.format(date, event, length)
     
     return f"{base_prompt.strip()}"
 
@@ -343,14 +344,14 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
         image.save(img_buffer, format='JPEG', quality=85)
         jpeg_bytes = img_buffer.getvalue()
         print(f"Converted to JPEG: {len(jpeg_bytes)} bytes")
-        
+        md_prompt = "Identify three distinct elements in this image. For each, provide a detailed description including attributes such as color, shape, or texture. Format as: [element], [element], [element]"
         # Try different approaches based on MoonDream API expectations
         # Approach 1: Direct bytes
         try:
             print("Trying direct JPEG bytes...")
             response = md_client.query(
                 jpeg_bytes, 
-                "Identify three distinct elements in this image. For each, provide a detailed description including attributes such as color, shape, or texture. List them in order of their distance from the viewer, starting with the closest. Format as: 1. [element], 2. [element], 3. [element]"
+                md_prompt
             )
             response_content = response['answer']
             print(f"Success with direct bytes: {response_content}")
@@ -364,7 +365,7 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
             image_b64 = base64.b64encode(jpeg_bytes).decode('utf-8')
             response = md_client.query(
                 f"data:image/jpeg;base64,{image_b64}", 
-                "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
+                md_prompt
             )
             response_content = response['answer']
             print(f"Success with base64: {response_content}")
@@ -377,7 +378,7 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
             print("Trying PIL Image object...")
             response = md_client.query(
                 image, 
-                "List three different elements of this image in order of distance from the viewer. Format as: 1. [element], 2. [element], 3. [element]"
+                md_prompt
             )
             response_content = response['answer']
             print(f"Success with PIL Image: {response_content}")
@@ -391,7 +392,7 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
         import traceback
         traceback.print_exc()
         # Return fallback elements on error
-        return {"1": "building", "2": "tree", "3": "sky"}
+        return {"building, tree, sky "}
 
 async def generate_story_with_api(prompt: str) -> str:
     """
@@ -604,8 +605,9 @@ async def fetch_audio_from_url(url: str) -> bytes:
 async def generate_story_from_image(
     file: UploadFile = File(...),
     weather: str = "foggy",
-    length: int = 200,
+    length: int = 300,
     voice: str = "af_heart"
+    date: str = "00:00"
 ):
     start_time = datetime.now()
     
@@ -627,7 +629,7 @@ async def generate_story_from_image(
         
         # Rest of your code remains the same...
         event = generate_event(photo_elements)
-        prompt = generate_prompt(event, weather, datetime.now(), length)
+        prompt = generate_prompt(event, weather, date, length)
         print(f"Prompt: {prompt}")
 
         story_text = await generate_story_with_api(prompt)
