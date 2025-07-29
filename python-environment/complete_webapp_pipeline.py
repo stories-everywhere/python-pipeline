@@ -606,7 +606,7 @@ async def generate_story_from_image(
     file: UploadFile = File(...),
     weather: str = "foggy",
     length: int = 300,
-    voice: str = "af_heart"
+    voice: str = "af_heart",
     date: str = "00:00"
 ):
     start_time = datetime.now()
