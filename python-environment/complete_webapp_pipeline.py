@@ -352,7 +352,7 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
         image.save(img_buffer, format='JPEG', quality=85)
         jpeg_bytes = img_buffer.getvalue()
         print(f"Converted to JPEG: {len(jpeg_bytes)} bytes")
-        md_prompt = "Identify three distinct elements in this image. For each, provide a detailed description including attributes such as color, shape, or texture. Format as: [element], [element], [element]"
+        md_prompt = "Identify three distinct elements in this image. For each, provide a detailed description including attributes such as color, shape, or texture. Format as: [description element], [description element], [description element]"
         # Try different approaches based on MoonDream API expectations
         # Approach 1: Direct bytes
         try:
