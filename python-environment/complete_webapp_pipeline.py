@@ -169,28 +169,23 @@ def generate_event(photo_elements: Dict[str, str]) -> str:
         "delusional", "glowing"
     ]
 
-    
-    # # Select a random element from the photo or use default
-    # element = random.choice(list(photo_elements.values())) if photo_elements else "object"
-    
-    # return f"A {random.choice(subjects)} {random.choice(verbs)} a {random.choice(adjectives)} {element}."
-
-    #include all elements in the event    
+    # Include all elements in the event    
     elements = list(photo_elements.values())
 
     if not elements:
         return "No recognizable elements were found in the image."
 
+    # Format the elements properly as a comma-separated list
     if len(elements) == 1:
         description = elements[0]
     elif len(elements) == 2:
         description = f"{elements[0]} and {elements[1]}"
     else:
         description = ", ".join(elements[:-1]) + f", and {elements[-1]}"
-    # adjective of desccription has been erased to keep more of the real-life descriptors
+    
     return (
         f"The {random.choice(subjects)} {random.choice(verbs)} "
-        f" {description}."
+        f"{description}."
     )
     # return f"The {random.choice(subjects)} {random.choice(verbs)}  {random.choice(adjectives)} {photo_elements['1']}, {photo_elements['2']} and {photo_elements['3']}."
 
