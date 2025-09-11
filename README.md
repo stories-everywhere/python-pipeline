@@ -7,6 +7,7 @@ Using a series of ML models to create stories from real-time inputs like:
 - weather
 - date
 
+[the pipeline used in the app is the file: python-environment/complete_webapp_pipeline.py which is uploaded on RenderAPI]
 # Pipeline Real Example 
 ### Visual Question Answering (VQA) model
 model: [api.moondream.ai/v1/query](https://moondream.ai/c/docs/advanced/api/query)
