@@ -443,7 +443,7 @@ async def generate_story_with_api(prompt: str) -> str:
 
         #llama call
         response = openai_client.chat.completions.create(
-            model="Meta-Llama-3.1-8B-Instruct",
+            model="DeepSeek-R1-0528",
             messages=[{
                 "role":"system",
                 "content":
