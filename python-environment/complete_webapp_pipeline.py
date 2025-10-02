@@ -172,19 +172,37 @@ def generate_event(photo_elements: Dict[str, str]) -> str:
     # Include all elements in the event    
     raw_elements = list(photo_elements.values())
     
+    # # Extract actual element names from the malformed dictionary
+    # elements = []
+    # for item in raw_elements:
+    #     # Skip brackets and extract quoted strings
+    #     if item.strip().startswith('"') and item.strip().endswith('"'):
+    #         # Remove quotes and comma, clean up the string
+    #         clean_item = item.strip().strip(',').strip('"')
+    #         elements.append(clean_item)
+    #     elif item.strip().startswith('"') and ',' in item:
+    #         # Handle items like ' "Cardboard box",'
+    #         clean_item = item.strip().split('"')[1]
+    #         elements.append(clean_item)
+
+    # if not elements:
+    #     return "No recognizable elements were found in the image."
+
+
     # Extract actual element names from the malformed dictionary
     elements = []
     for item in raw_elements:
-        # Skip brackets and extract quoted strings
-        if item.strip().startswith('"') and item.strip().endswith('"'):
-            # Remove quotes and comma, clean up the string
-            clean_item = item.strip().strip(',').strip('"')
+        # Skip brackets and extract bracketed strings
+        item_stripped = item.strip()
+        if item_stripped.startswith('[') and item_stripped.endswith(']'):
+            # Remove brackets and comma, clean up the string
+            clean_item = item_stripped.strip(',').strip('[]')
             elements.append(clean_item)
-        elif item.strip().startswith('"') and ',' in item:
-            # Handle items like ' "Cardboard box",'
-            clean_item = item.strip().split('"')[1]
+        elif item_stripped.startswith('[') and ',' in item:
+            # Handle items like ' [Powerful],'
+            clean_item = item_stripped.split('[')[1].split(']')[0]
             elements.append(clean_item)
-
+        
     if not elements:
         return "No recognizable elements were found in the image."
 
