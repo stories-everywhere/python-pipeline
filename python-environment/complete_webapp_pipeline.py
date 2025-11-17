@@ -543,15 +543,48 @@ async def generate_audio_with_api(text_blocks: List[str], voice: str) -> List[by
                 "fal-ai/elevenlabs/tts/turbo-v2.5",
                 arguments={
                     "text": text_block,
-                    "voice": "Bill",
-                    "stability": 0.5,
+                    "voice": "Charlie",
+                     "stability": 0.5,
                     "similarity_boost": 0.75,
-                    "speed": 1,
-                    "language_code": "it",
-                    "style": 0.5
+                    "speed": 1.1,
+                    "style": 0.7
                 },
             )
-            
+
+            # voice tests:
+            ### 1 ###
+            # "voice": "Bill",
+            # "stability": 0.5,
+            # "similarity_boost": 0.75,
+            # "speed": 1.2,
+            # "language_code": "it",
+            # "style": 0.5
+            ### 2 ### deep 
+            # voice": "Charlie",
+            # "stability": 0.5,
+            # "similarity_boost": 0.75,
+            # "speed": 1.1,
+            # "style": 0.7
+            ### 3 ### very stylised 
+            # "voice": "Callum",
+            # "stability": 0.5,
+            # "similarity_boost": 0.75,
+            # "speed": 1.1,
+            # "style": 0.7
+            ### 4 ### clean but uncanny
+            # "voice": "Will",
+            # "stability": 0.5,
+            # "similarity_boost": 0.75,
+            # "speed": 1.1,
+            # "style": 0.7
+            ### 5 ### it's giving police on tv
+            # "voice": "Brian",
+            # "stability": 0.5,
+            # "similarity_boost": 0.75,
+            # "speed": 1.1,
+            # "style": 0.7
+
+
 
             # Monitor the processing with logs (commented for too many logs)
             # async for event in handler.iter_events(with_logs=True):
