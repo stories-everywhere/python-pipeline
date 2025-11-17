@@ -144,30 +144,30 @@ def generate_event(photo_elements: Dict[str, str]) -> str:
         A randomly generated event description
     """
     subjects = [
-        "Strange amphibian", "major", "not so secret disposal company", 
-        "crazy duck", "very normal alien", 
-        "quantum cat", "sentient vending machine", 
-        "robot barista", "suspicious librarian", 
-        "moon janitor", "bio-luminescent intern", 
-        "tiny chaos deity", "grumpy cloud", "escaped simulation"
+        "Strano anfibio", "maggiore", "compagnia di smaltimento non così segreta", 
+        "anatra folle", "alieno molto normale", 
+        "gatto quantistico", "distributore automatico senziente", 
+        "barista robot", "bibliotecario sospetto", 
+        "custode lunare", "stagista bio-luminescente", 
+        "minuscola divinità del caos", "nuvola scontrosa", "simulazione fuggita"
     ]
 
     verbs = [
-        "jumps over", "solves", "paints", "explores", 
-        "repairs", "builds", "eats", "boils", 
-        "teleports", "invents", "whispers to", "disguises as", 
-        "encrypts", "deconstructs", "haunts", "accidentally befriends", 
-        "trades with", "measures", "reverses", "downloads from", 
-        "conducts", "maps", "photocopies", "upgrades"
-    ]
+            "salta sopra", "risolve", "dipinge", "esplora", 
+            "ripara", "costruisce", "mangia", "bolle", 
+            "teletrasporta", "inventa", "sussurra a", "si traveste da", 
+            "crittografa", "decostruisce", "infesta", "fa amicizia accidentalmente con", 
+            "commercia con", "misura", "inverte", "scarica da", 
+            "conduce", "mappa", "fotocopia", "aggiorna"
+        ]
 
-    adjectives = [
-        "lazy", "mysterious", "vibrant", "ancient", 
-        "futuristic", "noisy", "invisible", 
-        "radioactive", "cursed", "electric", "sticky", 
-        "floating", "bored", "recycled", "unstable", 
-        "delusional", "glowing"
-    ]
+    # adjectives = [
+    #     "lazy", "mysterious", "vibrant", "ancient", 
+    #     "futuristic", "noisy", "invisible", 
+    #     "radioactive", "cursed", "electric", "sticky", 
+    #     "floating", "bored", "recycled", "unstable", 
+    #     "delusional", "glowing"
+    # ]
 
     # Include all elements in the event    
     raw_elements = list(photo_elements.values())
@@ -238,11 +238,13 @@ def generate_prompt(event: str, weather: str, date: str, length: int) -> str:
     #     f"Event: {event}. Create a {length}-word real-time report on this event. "
     # )
     
+
     base_prompt = """
-        At {} {}. 
-        Create a {}-word  report on this event without restating the above sentence but including the hour at some point in the narration. 
-    """.format(date, event, length)
-    
+            Alle {} {}. 
+            Crea un resoconto di {} parole su questo evento senza ripetere la frase sopra, ma includendo l'ora da qualche parte nella narrazione. 
+        """.format(date, event, length)
+
+
     return f"{base_prompt.strip()}"
 
 def clean_text(text: str) -> str:
@@ -350,7 +352,7 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
     global md_client
     if not md_client:
         print("MoonDream client not available, using fallback")
-        return {"1": "building", "2": "tree", "3": "sky"}
+        return {"1": "edificio", "2": "albero", "3": "cielo"}
 
     try:
         print(f"Received image data: {len(image_data)} bytes")
@@ -370,7 +372,7 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
         image.save(img_buffer, format='JPEG', quality=85)
         jpeg_bytes = img_buffer.getvalue()
         print(f"Converted to JPEG: {len(jpeg_bytes)} bytes")
-        md_prompt = "Identify up to three distinct characterising elements in this image. For each, provide a detailed description. List the elements found in the following format: [first adjective and element name], [secod adjective and element name], [third adjective and element name]"
+        md_prompt = "Identifica fino a tre elementi caratterizzanti distinti in questa immagine. Per ciascuno, fornisci una descrizione dettagliata. Elenca gli elementi trovati nel seguente formato: primo aggettivo e nome dell'elemento, secondo aggettivo e nome dell'elemento, terzo aggettivo e nome dell'elemento"
         # Try different approaches based on MoonDream API expectations
         # Approach 1: Direct bytes
         try:
@@ -417,8 +419,9 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
         print(f"Error analyzing image: {e}")
         import traceback
         traceback.print_exc()
+        exeption_return = {"1": "edificio","2": "albero","3": "cielo "}
         # Return fallback elements on error
-        return {"building, tree, sky "}
+        return exeption_return
 
 async def generate_story_with_api(prompt: str) -> str:
     """
@@ -435,10 +438,11 @@ async def generate_story_with_api(prompt: str) -> str:
     if not openai_client:
         print("Open Ai [sambanova] client not available, using fallback")
         return (
-            "In the misty town of Langate today, residents report unusual "
-            "occurrences involving local wildlife and mysterious structures. "
-            "The mayor assures everyone this is perfectly normal for a Tuesday."
+            "Nella nebbiosa città di Langate oggi, i residenti riportano insoliti "
+            "avvenimenti che coinvolgono la fauna locale e misteriose strutture. "
+            "Il sindaco assicura a tutti che è perfettamente normale per un martedì."
         )
+
     
     try:
        
@@ -465,19 +469,20 @@ async def generate_story_with_api(prompt: str) -> str:
             messages=[{
                 "role":"system",
                 "content":
-                    """ 
-                    You are a radio announcer in the town of Langate, broadcasting in the middle of your day. You report on supernatural events as soon as you become aware of them, stating the hour they occur. 
-                    
-                    You will begin each report with phrases such as "I've just been told that at hour...", "Breaking news from the studio", "Word on the street is", "I'm looking at photos of", "Our cameras captured", "In an unprecedented event", "Traffic control reports".
-                                
-                    The events may be terrifying, absurd, or both. Report them in a calm, dry, and eerie tone, as though such happenings are routine. Your delivery should carry a subtle thread of dark humor — the kind that suggests you're either slightly amused or entirely resigned to the madness of Langate.
-
-                    After each report, sound as though you are waiting for the next message to arrive.
-
-                    Your output should be a transcript of only your spoken words intended for a text-to-speech model. Use plain text only. Do not include any special characters except for quotation marks ("), and include nothing outside of what the voice should say.
-
-                    Do not include any non-verbal cues or stage directions such as (pause), (sigh), or sound effects. 
                     """
+                    Sei un annunciatore radiofonico della città di Langate, in onda nel mezzo della giornata. Riporti eventi soprannaturali non appena ne vieni a conoscenza, indicando l’ora in cui si verificano.
+
+                    Inizierai ogni notizia con frasi come "Mi è appena stato riferito che alle...", "Ultim’ora dallo studio", "Si dice in giro che", "Sto guardando delle foto di", "Le nostre telecamere hanno catturato", "In un evento senza precedenti", "Il controllo del traffico riporta".
+
+                    Gli eventi possono essere terrificanti, assurdi o entrambi. Raccontali con un tono calmo, asciutto e inquietante, come se tali avvenimenti fossero di routine. La tua narrazione dovrebbe portare un filo sottile di umorismo oscuro, quello che suggerisce che tu sia leggermente divertito o completamente rassegnato alla follia di Langate.
+
+                    Dopo ogni notizia, sembri in attesa che arrivi il prossimo messaggio.
+
+                    Il tuo output deve essere una trascrizione delle sole parole pronunciate, destinate a un modello text-to-speech. Usa solo testo semplice. Non includere alcun carattere speciale eccetto le virgolette (") e non includere niente che non sia ciò che la voce dovrebbe dire.
+
+                    Non includere indicazioni non verbali o didascalie come (pausa), (sospiro) o effetti sonori.
+                    """
+
                 },
             {
                 "role":"user",
@@ -492,10 +497,11 @@ async def generate_story_with_api(prompt: str) -> str:
     except Exception as e:
         print(f"Error generating story: {e}")
         return (
-            "In the misty town of Langate today, residents report unusual "
-            "occurrences involving local wildlife and mysterious structures. "
-            "The mayor assures everyone this is perfectly normal for a Tuesday."
+            "Nella nebbiosa città di Langate oggi, i residenti riportano insoliti "
+            "avvenimenti che coinvolgono la fauna locale e misteriose strutture. "
+            "Il sindaco assicura a tutti che è perfettamente normale per un martedì."
         )
+
 
 async def generate_audio_with_api(text_blocks: List[str], voice: str) -> List[bytes]:
     """
@@ -515,16 +521,29 @@ async def generate_audio_with_api(text_blocks: List[str], voice: str) -> List[by
         
         try:
             # Submit async request to FAL AI TTS service
+            # handler = await fal_client.submit_async(
+            #     "fal-ai/chatterbox/text-to-speech",
+            #     arguments={
+            #         "audio_url": "https://v3.fal.media/files/elephant/wLS77pG8fFjdqybPlKp3g_1-common_voice_en_39613299.mp3",
+            #         "exaggeration": 0.3,
+            #         "temperature": 0.7,
+            #         "cfg": 0.5,
+            #         "text": text_block
+            #     },
+            # )
             handler = await fal_client.submit_async(
-                "fal-ai/chatterbox/text-to-speech",
+                "fal-ai/elevenlabs/tts/turbo-v2.5",
                 arguments={
-                    "audio_url": "https://v3.fal.media/files/elephant/wLS77pG8fFjdqybPlKp3g_1-common_voice_en_39613299.mp3",
-                    "exaggeration": 0.3,
-                    "temperature": 0.7,
-                    "cfg": 0.5,
-                    "text": text_block
+                    "text": text_block,
+                    "voice": "Bill",
+                    "stability": 0.5,
+                    "similarity_boost": 0.75,
+                    "speed": 1,
+                    "language_code": "it",
+                    "style": 0.5
                 },
             )
+            
 
             # Monitor the processing with logs (commented for too many logs)
             # async for event in handler.iter_events(with_logs=True):
