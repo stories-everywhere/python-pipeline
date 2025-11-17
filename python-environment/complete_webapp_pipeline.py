@@ -133,7 +133,7 @@ def parse_model_output(output: str) -> Dict[str, str]:
         for i, line in enumerate(output.strip().split("\n"), start=1)
     }
 
-def generate_event(photo_elements: Dict[str, str]) -> str:
+def generate_event(photo_elements: str) -> str:
     """
     Generate a random surreal event based on photo elements.
     
@@ -170,7 +170,7 @@ def generate_event(photo_elements: Dict[str, str]) -> str:
     # ]
 
     # Include all elements in the event    
-    raw_elements = list(photo_elements.values())
+    raw_elements = list(photo_elements)
     
     # # Extract actual element names from the malformed dictionary
     # elements = []
@@ -189,34 +189,34 @@ def generate_event(photo_elements: Dict[str, str]) -> str:
     #     return "No recognizable elements were found in the image."
 
 
-    # Extract actual element names from the malformed dictionary
-    elements = []
-    for item in raw_elements:
-        # Skip brackets and extract bracketed strings
-        item_stripped = item.strip()
-        if item_stripped.startswith('[') and item_stripped.endswith(']'):
-            # Remove brackets and comma, clean up the string
-            clean_item = item_stripped.strip(',').strip('[]')
-            elements.append(clean_item)
-        elif item_stripped.startswith('[') and ',' in item:
-            # Handle items like ' [Powerful],'
-            clean_item = item_stripped.split('[')[1].split(']')[0]
-            elements.append(clean_item)
+    # # Extract actual element names from the malformed dictionary
+    # elements = []
+    # for item in raw_elements:
+    #     # Skip brackets and extract bracketed strings
+    #     item_stripped = item.strip()
+    #     if item_stripped.startswith('[') and item_stripped.endswith(']'):
+    #         # Remove brackets and comma, clean up the string
+    #         clean_item = item_stripped.strip(',').strip('[]')
+    #         elements.append(clean_item)
+    #     elif item_stripped.startswith('[') and ',' in item:
+    #         # Handle items like ' [Powerful],'
+    #         clean_item = item_stripped.split('[')[1].split(']')[0]
+    #         elements.append(clean_item)
         
-    if not elements:
-        return "No recognizable elements were found in the image."
+    # if not elements:
+    #     return "No recognizable elements were found in the image."
 
     # Format the elements properly as a comma-separated list
-    if len(elements) == 1:
-        description = elements[0]
-    elif len(elements) == 2:
-        description = f"{elements[0]} and {elements[1]}"
-    else:
-        description = ", ".join(elements[:-1]) + f", and {elements[-1]}"
+    # if len(elements) == 1:
+    #     description = elements[0]
+    # elif len(elements) == 2:
+    #     description = f"{elements[0]} and {elements[1]}"
+    # else:
+    #     description = ", ".join(elements[:-1]) + f", and {elements[-1]}"
     
     return (
         f"The {random.choice(subjects)} {random.choice(verbs)} "
-        f"{description}."
+        f"{photo_elements}."
     )
     
 
@@ -339,7 +339,7 @@ def split_text_into_blocks(text, max_length=500):
     
     return blocks
 
-async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
+async def analyze_image_with_api(image_data: bytes) -> str:  # pyright: ignore
     """
     Analyze an image using MoonDream API to identify elements.
     
@@ -352,7 +352,7 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
     global md_client
     if not md_client:
         print("MoonDream client not available, using fallback")
-        return {"1": "edificio", "2": "albero", "3": "cielo"}
+        return "1: edificio, 2: albero, 3: cielo"
 
     try:
         print(f"Received image data: {len(image_data)} bytes")
@@ -383,9 +383,11 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
             )
             response_content = response['answer']
             print(f"Success with direct bytes: {response_content}")
-            return parse_model_output(response_content)
+            # return parse_model_output(response_content)
+            return response_content
         except Exception as e1:
             print(f"Direct bytes failed: {e1}")
+            # return "1: edificio, 2: albero, 3: cielo"
             
         # Approach 2: Base64 encoded
         try:
@@ -397,9 +399,11 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
             )
             response_content = response['answer']
             print(f"Success with base64: {response_content}")
-            return parse_model_output(response_content)
+            # return parse_model_output(response_content)
+            return response_content
         except Exception as e2:
             print(f"Base64 failed: {e2}")
+            # return "1: edificio, 2: albero, 3: cielo"
             
         # Approach 3: PIL Image object directly
         try:
@@ -410,10 +414,13 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
             )
             response_content = response['answer']
             print(f"Success with PIL Image: {response_content}")
-            return parse_model_output(response_content)
+            # return parse_model_output(response_content)
+            return response_content
 
         except Exception as e3:
             print(f"PIL Image failed: {e3}")
+            # return "1: edificio, 2: albero, 3: cielo"
+
 
     except Exception as e:
         print(f"Error analyzing image: {e}")
@@ -421,7 +428,8 @@ async def analyze_image_with_api(image_data: bytes) -> Dict[str, str]:
         traceback.print_exc()
         exeption_return = {"1": "edificio","2": "albero","3": "cielo "}
         # Return fallback elements on error
-        return exeption_return
+        return "1: edificio, 2: albero, 3: cielo"
+
 
 async def generate_story_with_api(prompt: str) -> str:
     """
