@@ -473,7 +473,7 @@ async def generate_story_with_api(prompt: str) -> str:
 
         #llama call
         response = openai_client.chat.completions.create(
-            model="DeepSeek-R1-0528",
+            model="Llama-3.3-Swallow-70B-Instruct-v0.4",
             messages=[{
                 "role":"system",
                 "content":
