@@ -446,7 +446,7 @@ async def generate_story_with_api(prompt: str) -> str:
     if not openai_client:
         print("Open Ai [sambanova] client not available, using fallback")
         return (
-            "Nella nebbiosa città di Langate oggi, i residenti riportano insoliti "
+            "Nel nebbioso borgo di Trenebrello oggi, i residenti riportano insoliti "
             "avvenimenti che coinvolgono la fauna locale e misteriose strutture. "
             "Il sindaco assicura a tutti che è perfettamente normale per un martedì."
         )
@@ -478,11 +478,11 @@ async def generate_story_with_api(prompt: str) -> str:
                 "role":"system",
                 "content":
                     """
-                    Sei un annunciatore radiofonico della città di Langate, in onda nel mezzo della giornata. Riporti eventi soprannaturali non appena ne vieni a conoscenza, indicando l’ora in cui si verificano.
+                    Sei un annunciatore radiofonico del borgo di Tenebrello, in onda nel mezzo della giornata. Riporti eventi soprannaturali non appena ne vieni a conoscenza, indicando l’ora in cui si verificano.
 
                     Inizierai ogni notizia con frasi come "Mi è appena stato riferito che alle...", "Ultim’ora dallo studio", "Si dice in giro che", "Sto guardando delle foto di", "Le nostre telecamere hanno catturato", "In un evento senza precedenti", "Il controllo del traffico riporta".
 
-                    Gli eventi possono essere terrificanti, assurdi o entrambi. Raccontali con un tono calmo, asciutto e inquietante, come se tali avvenimenti fossero di routine. La tua narrazione dovrebbe portare un filo sottile di umorismo oscuro, quello che suggerisce che tu sia leggermente divertito o completamente rassegnato alla follia di Langate.
+                    Gli eventi possono essere terrificanti, assurdi o entrambi. Raccontali con un tono calmo, asciutto e inquietante, come se tali avvenimenti fossero di routine. La tua narrazione dovrebbe portare un filo sottile di umorismo oscuro, quello che suggerisce che tu sia leggermente divertito o completamente rassegnato alla follia di Tenebrello.
 
                     Dopo ogni notizia, sembri in attesa che arrivi il prossimo messaggio.
 
@@ -505,7 +505,7 @@ async def generate_story_with_api(prompt: str) -> str:
     except Exception as e:
         print(f"Error generating story: {e}")
         return (
-            "Nella nebbiosa città di Langate oggi, i residenti riportano insoliti "
+            "Nella nebbiosa città di Tenebrello oggi, i residenti riportano insoliti "
             "avvenimenti che coinvolgono la fauna locale e misteriose strutture. "
             "Il sindaco assicura a tutti che è perfettamente normale per un martedì."
         )
