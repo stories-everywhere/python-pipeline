@@ -372,7 +372,7 @@ async def analyze_image_with_api(image_data: bytes) -> str:  # pyright: ignore
         image.save(img_buffer, format='JPEG', quality=85)
         jpeg_bytes = img_buffer.getvalue()
         print(f"Converted to JPEG: {len(jpeg_bytes)} bytes")
-        md_prompt = "Identifica fino a tre elementi caratterizzanti distinti in questa immagine. Per ciascuno, fornisci una descrizione dettagliata. Elenca gli elementi trovati nel seguente formato: primo aggettivo e nome dell'elemento, secondo aggettivo e nome dell'elemento, terzo aggettivo e nome dell'elemento"
+        md_prompt = "Identify up to three distinct key elements in this image. For each one, provide a detailed description. List the elements in the following format: first adjective + element name, second adjective + element name, third adjective + element name. Example format: A red house, a citrus plant, a big water bottle."
         # Try different approaches based on MoonDream API expectations
         # Approach 1: Direct bytes
         try:
