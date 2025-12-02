@@ -151,15 +151,30 @@ def generate_event(photo_elements: str) -> str:
         "custode lunare", "stagista bio-luminescente", 
         "minuscola divinità del caos", "nuvola scontrosa", "simulazione fuggita"
     ]
+    verbs = [ "salta sopra", "risolve", "dipinge", "esplora", "ripara", "costruisce", 
+        "mangia", "bolle", "teletrasporta", "inventa", "sussurra a", "si traveste da",
+        "crittografa", "decostruisce", "infesta", "fa amicizia accidentalmente con",
+        "commercia con", "misura", "inverte", "scarica da", "conduce", "mappa",
+        "fotocopia", "aggiorna" ]
 
-    verbs = [
-            "salta sopra", "risolve", "dipinge", "esplora", 
-            "ripara", "costruisce", "mangia", "bolle", 
-            "teletrasporta", "inventa", "sussurra a", "si traveste da", 
-            "crittografa", "decostruisce", "infesta", "fa amicizia accidentalmente con", 
-            "commercia con", "misura", "inverte", "scarica da", 
-            "conduce", "mappa", "fotocopia", "aggiorna"
-        ]
+    radiophonic_intros = [
+        "Mi è appena stato riferito che alle...",
+        "Ultim’ora dallo studio:",
+        "Si dice in giro che...",
+        "Sto guardando delle foto di...",
+        "Le nostre telecamere hanno catturato...",
+        "In un evento senza precedenti...",
+        "Il controllo del traffico riporta...",
+        "Fonti non confermate parlano di...",
+        "Riceviamo ora una segnalazione secondo cui...",
+        "I nostri inviati riferiscono che...",
+        "Sembra incredibile, ma pare che...",
+        "Abbiamo appena intercettato un messaggio che dice...",
+        "Le prime immagini mostrano che...",
+        "Una voce misteriosa racconta che...",
+        "Secondo testimoni oculari..."
+    ]
+
 
     # adjectives = [
     #     "lazy", "mysterious", "vibrant", "ancient", 
@@ -215,7 +230,7 @@ def generate_event(photo_elements: str) -> str:
     #     description = ", ".join(elements[:-1]) + f", and {elements[-1]}"
     
     return (
-        f"The {random.choice(subjects)} {random.choice(verbs)} "
+        f"{random.choice(radiophonic_intros)} che {random.choice(subjects)} {random.choice(verbs)} "
         f"{photo_elements}."
     )
     
@@ -372,7 +387,8 @@ async def analyze_image_with_api(image_data: bytes) -> str:  # pyright: ignore
         image.save(img_buffer, format='JPEG', quality=85)
         jpeg_bytes = img_buffer.getvalue()
         print(f"Converted to JPEG: {len(jpeg_bytes)} bytes")
-        md_prompt = "Identify up to three distinct key elements in this image. For each one, provide a detailed description. List the elements in the following format: first adjective + element name, second adjective + element name, third adjective + element name. Example format: A red house, a citrus plant, a big water bottle."
+
+        md_prompt = f"Identify {random.randint(1,3)} distinct key elements in this image. For each one, provide a detailed description. List the elements in the following format: first adjective + element name, second adjective + element name, third adjective + element name. Example format: A red house, a citrus plant, a big water bottle."
         # Try different approaches based on MoonDream API expectations
         # Approach 1: Direct bytes
         try:
@@ -479,8 +495,6 @@ async def generate_story_with_api(prompt: str) -> str:
                 "content":
                     """
                     Sei un annunciatore radiofonico del borgo di Tenebrello, in onda nel mezzo della giornata. Riporti eventi soprannaturali non appena ne vieni a conoscenza, indicando l’ora in cui si verificano.
-
-                    Inizierai ogni notizia con frasi come "Mi è appena stato riferito che alle...", "Ultim’ora dallo studio", "Si dice in giro che", "Sto guardando delle foto di", "Le nostre telecamere hanno catturato", "In un evento senza precedenti", "Il controllo del traffico riporta".
 
                     Gli eventi possono essere terrificanti, assurdi o entrambi. Raccontali con un tono calmo, asciutto e inquietante, come se tali avvenimenti fossero di routine. La tua narrazione dovrebbe portare un filo sottile di umorismo oscuro, quello che suggerisce che tu sia leggermente divertito o completamente rassegnato alla follia di Tenebrello.
 
