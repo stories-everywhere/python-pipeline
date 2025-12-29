@@ -389,6 +389,7 @@ async def analyze_image_with_api(image_data: bytes) -> str:  # pyright: ignore
         print(f"Converted to JPEG: {len(jpeg_bytes)} bytes")
 
         md_prompt = f"Identify {random.randint(1,3)} distinct key elements in this image. For each one, provide a detailed description. List the elements in the following format: first adjective + element name, second adjective + element name, third adjective + element name. Example format: A red house, a citrus plant, a big water bottle."
+        print(f"md_prompt: {md_prompt}")
         # Try different approaches based on MoonDream API expectations
         # Approach 1: Direct bytes
         try:
