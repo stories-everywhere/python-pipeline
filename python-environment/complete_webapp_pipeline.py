@@ -388,7 +388,7 @@ async def analyze_image_with_api(image_data: bytes) -> str:  # pyright: ignore
         jpeg_bytes = img_buffer.getvalue()
         print(f"Converted to JPEG: {len(jpeg_bytes)} bytes")
 
-        md_prompt = f"Identify {random.randint(1,3)} distinct key elements in this image. For each one, provide a detailed description. List the elements in the following format: first adjective + element name, second adjective + element name, third adjective + element name. Example format: A red house, a citrus plant, a big water bottle."
+        md_prompt = f"Identify {random.randint(1,3)} distinct key element/elements in this image. For each one, provide a detailed description. List the elements in the following format: adjective + element. Example format: A red house"
         print(f"md_prompt: {md_prompt}")
         # Try different approaches based on MoonDream API expectations
         # Approach 1: Direct bytes
@@ -501,7 +501,8 @@ async def generate_story_with_api(prompt: str) -> str:
 
                     Dopo ogni notizia, sembri in attesa che arrivi il prossimo messaggio.
 
-                    Il tuo output deve essere una trascrizione delle sole parole pronunciate, destinate a un modello text-to-speech. Usa solo testo semplice. Non includere alcun carattere speciale eccetto le virgolette (") e non includere niente che non sia ciò che la voce dovrebbe dire.
+                    Il tuo output deve essere una trascrizione delle sole parole pronunciate, destinate a un modello text-to-speech. Usa solo testo semplice. Scrivi tutti i numeri come parola e non con il carattere numerico.
+                    Traduci tutto in italiano. Non includere alcun carattere speciale eccetto le virgolette (") e non includere niente che non sia ciò che la voce dovrebbe dire.
 
                     Non includere indicazioni non verbali o didascalie come (pausa), (sospiro) o effetti sonori.
                     """
